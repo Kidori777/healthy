@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>몸 안의 반역자</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@100;300;400;600;700&family=Noto+Serif+KR:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-style:normal !important; }
+html { scroll-behavior:smooth; }
+
+:root {
+  --bg:       #050D0A;
+  --teal:     #00DFB8;
+  --teal-dim: rgba(0,223,184,0.18);
+  --red:      #FF1F3D;
+  --red-dim:  rgba(255,31,61,0.15);
+  --text:     #E0F0EA;
+  --dim:      rgba(224,240,234,0.5);
+  --gold:     #F5C542;
+  --gold-dim: rgba(245,197,66,0.12);
+  --josefin:  'Josefin Sans', sans-serif;
+  --serif:    'Noto Serif KR', serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--serif);
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar { width:2px; }
+::-webkit-scrollbar-thumb { background: rgba(0,223,184,0.2); border-radius:2px; }
+
+/* ── CANVAS ── */
+#cellCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── WRAP ── */
+.wrap { position:relative; z-index:1; }
+
+/* ══════════════════════════════════════
+   HERO
+══════════════════════════════════════ */
+.hero {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  padding: clamp(44px,8vw,110px);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-top: clamp(20px,4vh,50px);
+}
+
+.hero-label {
+  font-family: var(--josefin);
+  font-weight: 300;
+  font-size: 10px;
+  letter-spacing: 0.45em;
+  color: rgba(0,223,184,0.5);
+  line-height: 2;
+}
+
+/* Big cell count */
+.hero-count-wrap {
+  text-align: right;
+}
+.hero-count-num {
+  font-family: var(--josefin);
+  font-weight: 100;
+  font-size: clamp(50px, 9vw, 120px);
+  color: rgba(0,223,184,0.15);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  display: block;
+}
+.hero-count-label {
+  font-family: var(--josefin);
+  font-weight: 300;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  color: rgba(0,223,184,0.25);
+  display: block;
+  margin-top: 6px;
+}
+
+.hero-bottom {
+  padding-bottom: clamp(60px,10vh,120px);
+}
+
+.hero-eyebrow {
+  font-family: var(--josefin);
+  font-weight: 300;
+  font-size: 10px;
+  letter-spacing: 0.4em;
+  color: rgba(0,223,184,0.45);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.hero-eyebrow::before {
+  content:'';
+  width:24px; height:1px;
+  background: rgba(0,223,184,0.4);
+  display:block;
+}
+
+h1.hero-h1 {
+  font-family: var(--josefin);
+  font-weight: 700;
+  font-size: clamp(52px, 9.5vw, 140px);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  max-width: 720px;
+}
+h1.hero-h1 em {
+  color: var(--teal);
+  font-weight: 100;
+  letter-spacing: 0.02em;
+}
+
+.hero-sub {
+  display: block;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(13px,1.7vw,17px);
+  color: var(--dim);
+  margin-top: 24px;
+  letter-spacing: 0.03em;
+  line-height: 1.8;
+}
+
+/* ══════════════════════════════════════
+   PROSE BLOCKS
+══════════════════════════════════════ */
+.block {
+  max-width: 660px;
+  padding: clamp(50px,7vh,90px) clamp(44px,9vw,110px);
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.block.in { opacity:1; transform:translateY(0); }
+.block.right { margin-left:auto; text-align:right; }
+.block.center { margin:0 auto; text-align:center; }
+.block.wide { max-width:100%; }
+
+.block p {
+  font-size: clamp(15px,1.85vw,18px);
+  line-height: 2.1;
+  color: var(--text);
+  font-weight: 400;
+  margin-bottom: 1.2em;
+}
+.block p:last-child { margin-bottom:0; }
+
+.micro-tag {
+  font-family: var(--josefin);
+  font-weight: 400;
+  font-size: 9px;
+  letter-spacing: 0.38em;
+  color: rgba(0,223,184,0.45);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(0,223,184,0.18);
+  padding: 4px 12px;
+}
+.micro-tag::before { content:'◉'; font-size:5px; animation: dot 2s ease-in-out infinite; }
+@keyframes dot { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+.micro-tag.red {
+  color: rgba(255,31,61,0.6);
+  border-color: rgba(255,31,61,0.2);
+}
+.micro-tag.gold {
+  color: rgba(245,197,66,0.6);
+  border-color: rgba(245,197,66,0.22);
+}
+
+/* ══════════════════════════════════════
+   ORDER / RULE
+══════════════════════════════════════ */
+.order-list {
+  margin: 22px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 500px;
+}
+.order-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--serif);
+  font-size: clamp(14px,1.7vw,17px);
+  color: rgba(224,240,234,0.75);
+  font-weight: 400;
+}
+.order-dot {
+  width: 8px; height:8px;
+  border-radius:50%;
+  background: var(--teal);
+  flex-shrink: 0;
+  box-shadow: 0 0 8px var(--teal);
+}
+.order-item.dead .order-dot {
+  background: transparent;
+  border: 1px solid rgba(0,223,184,0.3);
+  box-shadow: none;
+}
+
+/* ══════════════════════════════════════
+   REBEL ZONE – full-width dark red
+══════════════════════════════════════ */
+.rebel-zone {
+  background: #0A0003;
+  border-top: 1px solid rgba(255,31,61,0.18);
+  border-bottom: 1px solid rgba(255,31,61,0.18);
+  padding: clamp(70px,10vh,130px) clamp(44px,9vw,110px);
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.9s ease, transform 0.9s ease;
+}
+.rebel-zone.in { opacity:1; transform:translateY(0); }
+
+/* Bleed effect */
+.rebel-zone::before {
+  content:'반역자';
+  position:absolute;
+  right:-0.08em; bottom:-0.15em;
+  font-family: var(--josefin);
+  font-weight:700;
+  font-size: clamp(120px,20vw,300px);
+  color: rgba(255,31,61,0.04);
+  line-height:1;
+  letter-spacing:-0.04em;
+  pointer-events:none;
+}
+
+.rebel-heading {
+  font-family: var(--josefin);
+  font-weight: 700;
+  font-size: clamp(40px,7vw,96px);
+  line-height: 0.95;
+  letter-spacing:-0.02em;
+  color: var(--red);
+  margin-bottom: 32px;
+  text-shadow: 0 0 60px rgba(255,31,61,0.4);
+}
+
+.rebel-prose {
+  font-size: clamp(15px,1.85vw,18px);
+  line-height: 2.1;
+  color: rgba(255,220,220,0.82);
+  font-weight: 400;
+  max-width: 600px;
+  margin-bottom: 1.2em;
+}
+.rebel-prose:last-child { margin-bottom:0; }
+.rebel-prose.em { color: #FFD0D0; font-weight:600; }
+
+/* ══════════════════════════════════════
+   EXPONENTIAL GROWTH VISUALIZER
+══════════════════════════════════════ */
+.expo-zone {
+  padding: clamp(60px,8vh,100px) clamp(44px,9vw,110px);
+  background: #040906;
+  border-top: 1px solid rgba(255,31,61,0.1);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.9s ease, transform 0.9s ease;
+}
+.expo-zone.in { opacity:1; transform:translateY(0); }
+
+.expo-label {
+  font-family: var(--josefin);
+  font-weight: 300;
+  font-size: 10px;
+  letter-spacing:0.38em;
+  color: rgba(255,31,61,0.5);
+  margin-bottom: 32px;
+}
+
+.expo-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.expo-count {
+  font-family: var(--josefin);
+  font-weight: 600;
+  font-size: clamp(11px,1.3vw,13px);
+  letter-spacing:0.1em;
+  color: rgba(255,31,61,0.5);
+  min-width: 44px;
+  flex-shrink:0;
+}
+
+.expo-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.cell-dot {
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 6px rgba(255,31,61,0.6);
+  flex-shrink:0;
+  animation: cellPulse 2s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 0.15s);
+}
+@keyframes cellPulse {
+  0%,100% { transform:scale(1); opacity:0.85; }
+  50%      { transform:scale(1.15); opacity:1; }
+}
+
+.expo-suffix {
+  font-family: var(--josefin);
+  font-weight:300;
+  font-size:11px;
+  letter-spacing:0.15em;
+  color: rgba(255,31,61,0.4);
+  margin-left:6px;
+}
+
+.expo-caption {
+  margin-top:28px;
+  font-size: clamp(15px,1.85vw,18px);
+  color: rgba(255,200,200,0.75);
+  line-height:2;
+  font-weight:400;
+  max-width:600px;
+}
+
+/* ══════════════════════════════════════
+   DIVIDER
+══════════════════════════════════════ */
+.section-rule {
+  margin: 0 clamp(44px,9vw,110px);
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent, rgba(0,223,184,0.2) 30%,
+    rgba(0,223,184,0.2) 70%, transparent
+  );
+}
+.section-rule.red {
+  background: linear-gradient(90deg,
+    transparent, rgba(255,31,61,0.18) 30%,
+    rgba(255,31,61,0.18) 70%, transparent
+  );
+}
+
+/* ══════════════════════════════════════
+   ORIGIN ZONE
+══════════════════════════════════════ */
+.origin-zone {
+  padding: clamp(60px,8vh,100px) clamp(44px,9vw,110px);
+  opacity:0;
+  transform: translateY(22px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.origin-zone.in { opacity:1; transform:translateY(0); }
+
+.origin-big {
+  font-family: var(--josefin);
+  font-weight: 100;
+  font-size: clamp(28px,5vw,70px);
+  line-height:1.15;
+  color: rgba(0,223,184,0.6);
+  letter-spacing:0.02em;
+  margin-bottom:28px;
+}
+
+/* ══════════════════════════════════════
+   SPIRITUAL
+══════════════════════════════════════ */
+.spirit {
+  padding: clamp(60px,8vh,100px) clamp(44px,9vw,110px);
+  max-width: 720px;
+  opacity:0;
+  transform: translateX(-22px);
+  transition: opacity 0.85s ease, transform 0.85s ease;
+}
+.spirit.right { margin-left:auto; text-align:right; transform:translateX(22px); }
+.spirit.in { opacity:1; transform:translate(0); }
+.spirit p {
+  font-size: clamp(15px,1.85vw,18px);
+  line-height:2.1;
+  color: var(--text);
+  font-weight:400;
+  margin-bottom:1.2em;
+}
+.spirit p:last-child { margin-bottom:0; }
+
+.big-declare {
+  font-family: var(--josefin);
+  font-weight: 600;
+  font-size: clamp(22px,3.5vw,46px);
+  line-height:1.3;
+  letter-spacing:-0.01em;
+  margin: 20px 0 24px;
+}
+.big-declare.teal { color: var(--teal); }
+.big-declare.red  { color: var(--red); }
+.big-declare.gold { color: var(--gold); }
+
+/* Sin list */
+.sin-list {
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sin-item {
+  font-family: var(--josefin);
+  font-weight: 600;
+  font-size: clamp(18px,2.8vw,36px);
+  letter-spacing:-0.01em;
+  color: rgba(255,31,61,0.8);
+  line-height:1.2;
+  opacity:0;
+  transform: translateX(-16px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.sin-item.in { opacity:1; transform:translateX(0); }
+.sin-item:nth-child(1) { transition-delay:0.05s; }
+.sin-item:nth-child(2) { transition-delay:0.15s; }
+.sin-item:nth-child(3) { transition-delay:0.25s; }
+.sin-item:nth-child(4) { transition-delay:0.35s; }
+
+/* ══════════════════════════════════════
+   SCRIPTURE
+══════════════════════════════════════ */
+.scripture {
+  margin: 8px clamp(44px,9vw,110px);
+  padding: 28px 34px;
+  border-left: 2px solid;
+  opacity:0;
+  transform: translateX(-16px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.scripture.in { opacity:1; transform:translateX(0); }
+.scripture.teal {
+  border-color: var(--teal);
+  background: rgba(0,223,184,0.04);
+}
+.scripture.red {
+  border-color: var(--red);
+  background: rgba(255,31,61,0.04);
+}
+.scripture.gold {
+  border-color: var(--gold);
+  background: rgba(245,197,66,0.05);
+}
+.scripture.green {
+  border-color: #00A86B;
+  background: rgba(0,168,107,0.05);
+}
+.scr-ref {
+  font-family: var(--josefin);
+  font-weight:400;
+  font-size:9px;
+  letter-spacing:0.32em;
+  display:block;
+  margin-bottom:12px;
+}
+.scripture.teal .scr-ref { color: rgba(0,223,184,0.55); }
+.scripture.red  .scr-ref { color: rgba(255,31,61,0.55); }
+.scripture.gold .scr-ref { color: rgba(245,197,66,0.55); }
+.scripture.green .scr-ref { color: rgba(0,168,107,0.65); }
+.scripture p {
+  font-size: clamp(16px,2vw,20px);
+  line-height:1.95;
+  font-weight:600;
+  color: #F0FAF6;
+}
+
+/* ══════════════════════════════════════
+   JESUS ZONE
+══════════════════════════════════════ */
+.jesus-zone {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(70px,10vh,130px) clamp(44px,9vw,110px);
+  background: linear-gradient(180deg, #050D0A 0%, #0A0F05 100%);
+  border-top: 1px solid rgba(245,197,66,0.15);
+  border-bottom: 1px solid rgba(245,197,66,0.15);
+  position: relative;
+  overflow: hidden;
+  opacity:0;
+  transform: scale(0.97);
+  transition: opacity 1s ease, transform 1s ease;
+}
+.jesus-zone.in { opacity:1; transform:scale(1); }
+
+/* Gold radial glow */
+.jesus-zone::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  background: radial-gradient(ellipse 80% 60% at 50% 50%,
+    rgba(245,197,66,0.07) 0%,
+    transparent 70%
+  );
+  pointer-events:none;
+}
+
+.jesus-name-big {
+  font-family: var(--josefin);
+  font-weight: 100;
+  font-size: clamp(44px,8vw,110px);
+  letter-spacing: 0.14em;
+  color: var(--gold);
+  text-shadow: 0 0 80px rgba(245,197,66,0.5);
+  line-height: 1.1;
+  display: block;
+  margin-bottom: 14px;
+}
+.jesus-sub-tag {
+  font-family: var(--josefin);
+  font-weight:300;
+  font-size:10px;
+  letter-spacing:0.35em;
+  color: rgba(245,197,66,0.4);
+  display:block;
+  margin-bottom:36px;
+}
+
+/* ══════════════════════════════════════
+   CLOSING
+══════════════════════════════════════ */
+.closing {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  padding: clamp(70px,10vw,140px);
+  position: relative;
+  overflow: hidden;
+  opacity:0;
+  transform: translateY(20px);
+  transition: opacity 1s ease 0.1s, transform 1s ease 0.1s;
+}
+.closing::before {
+  content:'NEW CREATION';
+  position:absolute;
+  left:-0.02em; bottom:-0.08em;
+  font-family: var(--josefin);
+  font-weight:700;
+  font-size: clamp(60px,10vw,150px);
+  color: rgba(0,223,184,0.03);
+  letter-spacing:-0.02em;
+  line-height:1;
+  pointer-events:none;
+  white-space:nowrap;
+}
+.closing.in { opacity:1; transform:translateY(0); }
+.closing p {
+  font-size: clamp(17px,2.3vw,24px);
+  line-height:2.2;
+  color: rgba(224,240,234,0.88);
+  font-weight:400;
+  max-width:640px;
+  margin-bottom:1em;
+  position:relative;
+}
+.closing p.em {
+  color: var(--teal);
+  font-weight:600;
+}
+
+.sp { height:20px; }
+.sp-lg { height:50px; }
+</style>
+</head>
+<body>
+
+<canvas id="cellCanvas"></canvas>
+
+<div class="wrap">
+
+<!-- ══ HERO ══════════════════════════════ -->
+<section class="hero">
+  <div class="hero-top">
+    <div class="hero-label">
+      CELLULAR BIOLOGY<br>
+      ONCOLOGY REPORT<br>
+      몸 안의 반역자
+    </div>
+    <div class="hero-count-wrap">
+      <span class="hero-count-num">37兆</span>
+      <span class="hero-count-label">우리 몸의 세포 수</span>
+    </div>
+  </div>
+  <div class="hero-bottom">
+    <div class="hero-eyebrow">CANCER CELL · 암세포 · LIFE STORY</div>
+    <h1 class="hero-h1">
+      몸 안의<br><em>반역자</em>
+      <span class="hero-sub">— 암세포와 생명의 이야기</span>
+    </h1>
+  </div>
+</section>
+
+<!-- ══ 37조 개의 세포 ══════════════════ -->
+<div class="block" id="b1">
+  <div class="micro-tag">SPECIMEN 001 · 세포의 세계</div>
+  <p>우리 몸은 약 37조 개의 세포로 이루어져 있습니다.</p>
+  <p>이 세포들은 각자 맡은 역할이 있습니다.</p>
+  <div class="order-list">
+    <div class="order-item"><div class="order-dot"></div>어떤 세포는 심장을 뛰게 하고</div>
+    <div class="order-item"><div class="order-dot"></div>어떤 세포는 폐에서 산소를 교환하고</div>
+    <div class="order-item"><div class="order-dot"></div>어떤 세포는 근육을 움직이게 합니다</div>
+  </div>
+  <p>수많은 세포들이 서로 협력하며 하나의 몸을 이루어 살아갑니다. 그리고 이 모든 세포들은 놀라운 질서 속에서 움직입니다.</p>
+</div>
+
+<div class="block right" id="b2">
+  <div class="micro-tag" style="margin-left:auto;">SPECIMEN 002 · 세포의 질서</div>
+  <div class="order-list" style="margin-left:auto; text-align:left;">
+    <div class="order-item"><div class="order-dot"></div>세포는 필요할 때만 분열합니다</div>
+    <div class="order-item dead"><div class="order-dot"></div>수명이 다하면 스스로 사라집니다</div>
+  </div>
+  <p>그렇게 함으로써 몸 전체의 균형이 유지됩니다.</p>
+</div>
+
+<!-- ══ 반역자 등장 ══════════════════════ -->
+<div class="rebel-zone" id="b-rebel">
+  <div class="rebel-heading">그런데<br>어느 날—</div>
+  <p class="rebel-prose">이 질서를 거부하는 세포가 나타납니다.</p>
+  <p class="rebel-prose">그 세포는 더 이상 몸의 명령을 따르지 않습니다.</p>
+  <p class="rebel-prose em">필요하지 않아도 계속 분열하기 시작합니다.</p>
+  <p class="rebel-prose em">죽어야 할 때도 죽지 않습니다.</p>
+  <p class="rebel-prose">그리고 주변의 정상 세포들을 밀어내며 자기 영역을 넓혀 갑니다.</p>
+  <p class="rebel-prose" style="color:#FF1F3D; font-weight:600;">이 세포를 우리는 암세포라고 부릅니다.</p>
+</div>
+
+<!-- ══ 처음엔 작다 ══════════════════════ -->
+<div class="block" id="b3">
+  <div class="micro-tag red">SPECIMEN 003 · 초기 단계</div>
+  <p>암세포는 처음에는 아주 작습니다. 현미경으로 겨우 보일 정도입니다.</p>
+  <p>그래서 대부분의 사람들은 그 존재를 전혀 느끼지 못합니다. 아프지도 않습니다. 증상도 거의 없습니다.</p>
+  <p>하지만 시간이 지나면서 그 작은 세포는 계속 분열합니다.</p>
+</div>
+
+<!-- ══ 지수 성장 ══════════════════════════ -->
+<div class="expo-zone" id="b-expo">
+  <div class="expo-label">EXPONENTIAL DIVISION · 지수 분열</div>
+
+  <div class="expo-row">
+    <div class="expo-count">1개</div>
+    <div class="expo-dots">
+      <div class="cell-dot" style="--i:0; width:14px; height:14px;"></div>
+    </div>
+  </div>
+
+  <div class="expo-row">
+    <div class="expo-count">2개</div>
+    <div class="expo-dots">
+      <div class="cell-dot" style="--i:0; width:13px; height:13px;"></div>
+      <div class="cell-dot" style="--i:1; width:13px; height:13px;"></div>
+    </div>
+  </div>
+
+  <div class="expo-row">
+    <div class="expo-count">4개</div>
+    <div class="expo-dots">
+      <div class="cell-dot" style="--i:0; width:12px; height:12px;"></div>
+      <div class="cell-dot" style="--i:1; width:12px; height:12px;"></div>
+      <div class="cell-dot" style="--i:2; width:12px; height:12px;"></div>
+      <div class="cell-dot" style="--i:3; width:12px; height:12px;"></div>
+    </div>
+  </div>
+
+  <div class="expo-row">
+    <div class="expo-count">8개</div>
+    <div class="expo-dots" id="dots8"></div>
+  </div>
+
+  <div class="expo-row">
+    <div class="expo-count">16개</div>
+    <div class="expo-dots" id="dots16"></div>
+  </div>
+
+  <div class="expo-row">
+    <div class="expo-count">32개</div>
+    <div class="expo-dots" id="dots32"></div>
+  </div>
+
+  <div class="expo-row">
+    <div class="expo-count">64개</div>
+    <div class="expo-dots" id="dots64"></div>
+  </div>
+
+  <div class="expo-row" style="align-items:center;">
+    <div class="expo-count">…</div>
+    <div style="font-family:'Josefin Sans',sans-serif; font-weight:600; font-size:clamp(18px,3vw,36px); color:rgba(255,31,61,0.7); letter-spacing:0.05em;">
+      수억 개<span class="expo-suffix">→ 덩어리를 이루게 됩니다</span>
+    </div>
+  </div>
+
+  <p class="expo-caption">하나가 둘이 되고 둘이 넷이 되고 넷이 여덟이 됩니다.<br>그리고 어느 순간 몸속에 수억 개의 세포가 모여 덩어리를 이루게 됩니다.</p>
+  <p class="expo-caption" style="margin-top:12px; color:#FF8080; font-weight:600;">이것이 바로 암입니다.</p>
+</div>
+
+<!-- ══ 암이 무서운 이유 ══════════════════ -->
+<div class="block" id="b4">
+  <div class="micro-tag red">SPECIMEN 004 · 파괴의 방식</div>
+  <p>암이 무서운 이유는 단지 커지기 때문만이 아닙니다.</p>
+  <p>암세포는 몸 전체를 위해 살지 않습니다. 오직 자기 자신만을 위해 살기 시작합니다.</p>
+  <p>몸이 필요한 영양을 빼앗고 주변 조직을 파괴하며 혈관을 타고 다른 장기로 퍼져 나갑니다.</p>
+  <p>의사들은 이것을 <strong style="color:var(--red);">전이</strong>라고 부릅니다.</p>
+  <p>그래서 암은 몸 전체를 서서히 무너뜨릴 수 있습니다.</p>
+</div>
+
+<!-- ══ 놀라운 사실 ══════════════════════ -->
+<div class="origin-zone" id="b-origin">
+  <div class="micro-tag">SPECIMEN 005 · 기원</div>
+  <div class="origin-big">처음에는<br>우리 몸의<br>정상 세포였습니다.</div>
+  <div class="block" style="padding:0; opacity:1; transform:none; max-width:600px;">
+    <p>그런데 놀라운 사실이 있습니다. 암세포는 처음부터 암이었던 것이 아닙니다.</p>
+    <p>하지만 어느 순간 그 세포가 변해 버린 것입니다. 몸을 위해 살던 세포가 자기 자신만을 위해 살기 시작한 것입니다.</p>
+  </div>
+</div>
+
+<div class="section-rule"></div>
+
+<!-- ══ 영적 병행 ══════════════════════════ -->
+<div class="spirit" id="sp1">
+  <div class="micro-tag">SPIRITUAL PARALLEL · 영적 병행</div>
+  <p>이 모습을 가만히 생각해 보면 우리 인간의 모습과도 놀랍도록 닮아 있습니다.</p>
+  <p>성경은 말합니다. 하나님은 인간을 자신의 형상대로 창조하셨습니다. 그리고 창조하신 모든 것이 좋으셨습니다.</p>
+</div>
+
+<div class="scripture teal" id="scr1">
+  <span class="scr-ref">창세기 1장 27절</span>
+  <p>"하나님은 그분 자신의 형상대로 사람을 창조하셨다."</p>
+</div>
+
+<div class="scripture teal" id="scr2">
+  <span class="scr-ref">창세기 1장 31절</span>
+  <p>하나님께서 보시기에 직접 만드신 모든 것이 참으로 매우 좋았다.</p>
+</div>
+
+<div class="spirit" id="sp2">
+  <p>하나님이 만드신 세상은 질서와 조화 속에서 아름다웠습니다.</p>
+  <p>그러나 인간은 하나님의 질서를 떠나 자기 마음대로 살기 시작했습니다. 성경은 이렇게 말합니다.</p>
+</div>
+
+<div class="scripture red" id="scr3">
+  <span class="scr-ref">이사야 53장 6절</span>
+  <p>"우리는 모두 양처럼 길을 잃고 각자 제 길로 갔으나"</p>
+</div>
+
+<div class="spirit" id="sp3">
+  <p>사람은 하나님을 떠나 각자 자기 길을 선택했습니다. 성경은 이것을 죄라고 말합니다.</p>
+  <div class="big-declare red">죄는 단순한 실수가 아닙니다.</div>
+  <p>죄는 하나님의 질서를 거부하고 자기 중심으로 살아가는 삶입니다. 그래서 성경은 말합니다.</p>
+</div>
+
+<div class="scripture red" id="scr4">
+  <span class="scr-ref">야고보서 1장 15절</span>
+  <p>"그러므로 욕심이 잉태하여 죄를 낳고, 죄가 완전히 자라면 죽음을 낳습니다."</p>
+</div>
+
+<div class="spirit" id="sp4">
+  <p>죄는 처음에는 작아 보입니다. 별것 아닌 것처럼 보입니다. 하지만 시간이 지나면서 우리의 마음을 점점 지배하기 시작합니다.</p>
+</div>
+
+<!-- Sin list -->
+<div class="block" id="b-sins">
+  <div class="sin-list">
+    <div class="sin-item" id="sin1">교만</div>
+    <div class="sin-item" id="sin2">욕심</div>
+    <div class="sin-item" id="sin3">미움</div>
+    <div class="sin-item" id="sin4">분노</div>
+  </div>
+  <div class="block" style="padding:0; opacity:1; transform:none; max-width:600px; margin-top:28px;">
+    <p>이 모든 것들이 우리 영혼을 파괴합니다.</p>
+  </div>
+</div>
+
+<div class="spirit" id="sp5">
+  <p>마치 암세포가 몸의 질서를 무너뜨리듯 죄는 우리 영혼의 질서를 무너뜨립니다.</p>
+  <p>그래서 성경은 이렇게 말합니다.</p>
+</div>
+
+<div class="scripture red" id="scr5">
+  <span class="scr-ref">로마서 6장 23절</span>
+  <p>"죄의 대가는 죽음이지만"</p>
+</div>
+
+<!-- ══ 예수 ══════════════════════════════ -->
+<div class="spirit" id="sp6">
+  <p>하지만 하나님은 우리 인간이 멸망하도록 내버려 두지 않으셨습니다. 그래서 하나님은 우리에게 한 분을 보내셨습니다.</p>
+</div>
+
+<div class="jesus-zone" id="b-jesus">
+  <span class="jesus-name-big">예수 그리스도</span>
+  <span class="jesus-sub-tag">JESUS CHRIST · 죄로 인해 망가진 인간을 다시 살리기 위해 오신 분</span>
+  <div class="block" style="padding:0; opacity:1; transform:none; max-width:640px;">
+    <p style="color:rgba(245,230,180,0.85);">예수님은 죄로 인해 망가진 인간을 다시 살리기 위해 오셨습니다. 그리고 우리를 위해 십자가에서 죽으셨습니다.</p>
+    <p style="color:rgba(245,230,180,0.85);">성경은 이렇게 말합니다.</p>
+  </div>
+</div>
+
+<div class="scripture gold" id="scr6">
+  <span class="scr-ref">베드로전서 2장 24절</span>
+  <p>"그분은 우리의 죄들을 직접 자기의 몸에 짊어지시고 나무에 달리셨습니다. 그것은 우리가 죄들에 대하여 죽음으로써 의에 대하여 살도록 하시려는 것입니다."</p>
+</div>
+
+<div class="spirit" id="sp7">
+  <p>그래서 예수님은 이렇게 말씀하셨습니다.</p>
+</div>
+
+<div class="scripture gold" id="scr7">
+  <span class="scr-ref">요한복음 10장 10절</span>
+  <p>"내가 온 것은 양들이 생명을 얻고 더 풍성히 얻도록 하기 위한 것입니다."</p>
+</div>
+
+<div class="spirit" id="sp8">
+  <p>암세포가 몸의 질서를 무너뜨리듯 죄는 우리 영혼을 무너뜨립니다.</p>
+  <p>그러나 예수 그리스도는 우리에게 새로운 생명을 주십니다. 그래서 성경은 말합니다.</p>
+</div>
+
+<div class="scripture green" id="scr8">
+  <span class="scr-ref">고린도후서 5장 17절</span>
+  <p>"그러므로 누구든지 그리스도 안에 있으면 새 창조물입니다. 옛것들은 지나갔습니다. 보십시오, 새것이 되었습니다."</p>
+</div>
+
+<!-- ══ CLOSING ══════════════════════════ -->
+<div class="closing" id="b-closing">
+  <div>
+    <p>예수 그리스도 안에서 우리의 삶은 다시 시작됩니다.</p>
+    <p class="em">그리고 그분 안에서 우리의 영혼은 새로운 생명을 얻게 됩니다.</p>
+  </div>
+</div>
+
+</div><!-- .wrap -->
+
+<script>
+/* ─── EXPO DOTS ──────────────────────────── */
+function makeDots(id, count) {
+  const wrap = document.getElementById(id);
+  if (!wrap) return;
+  const size = count <= 8 ? 10 : count <= 32 ? 7 : 5;
+  for (let i = 0; i < count; i++) {
+    const d = document.createElement('div');
+    d.className = 'cell-dot';
+    d.style.cssText = `--i:${i}; width:${size}px; height:${size}px;`;
+    wrap.appendChild(d);
+  }
+}
+makeDots('dots8',  8);
+makeDots('dots16', 16);
+makeDots('dots32', 32);
+makeDots('dots64', 64);
+
+/* ─── CANVAS CELL GRID ─────────────────── */
+const cv = document.getElementById('cellCanvas');
+const cx = cv.getContext('2d');
+let W = 0, H = 0;
+const CELL_SZ = 26;
+let cols = 0, rows = 0;
+let cells = [];
+
+function resize() {
+  W = cv.width  = window.innerWidth;
+  H = cv.height = window.innerHeight;
+  cols = Math.ceil(W / CELL_SZ) + 1;
+  rows = Math.ceil(H / CELL_SZ) + 1;
+  initCells();
+}
+
+function initCells() {
+  cells = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      cells.push({
+        c, r,
+        x: c * CELL_SZ, y: r * CELL_SZ,
+        // state: 0=normal, 1=mutating, 2=cancer
+        state: 0,
+        mutateT: 0,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.4 + Math.random() * 0.8,
+      });
+    }
+  }
+}
+
+resize();
+window.addEventListener('resize', resize);
+
+let sp = 0;
+window.addEventListener('scroll', () => {
+  sp = window.scrollY / Math.max(1,
+    document.documentElement.scrollHeight - window.innerHeight);
+}, { passive: true });
+
+let t = 0;
+let lastStamp = null;
+
+function paint(ts) {
+  requestAnimationFrame(paint);
+  if (!lastStamp) lastStamp = ts;
+  const dt = Math.min(ts - lastStamp, 40);
+  lastStamp = ts;
+  t += dt * 0.001;
+
+  cx.clearRect(0, 0, W, H);
+
+  // Cancer spread ratio based on scroll
+  // 0% scroll = no cancer, ~35% = cancer starts, ~70% = max cancer, >75% = recovery
+  const cancerRatio = sp < 0.3 ? 0
+    : sp < 0.72 ? Math.min(1, (sp - 0.3) / 0.42)
+    : Math.max(0, 1 - (sp - 0.72) / 0.18);
+
+  const totalCells = cells.length;
+  const cancerCount = Math.floor(cancerRatio * totalCells * 0.55);
+
+  cells.forEach((cell, idx) => {
+    cell.phase += dt * 0.0003 * cell.speed;
+
+    // Determine if cancer
+    const isCancer = idx < cancerCount;
+    const pulse = 0.5 + 0.5 * Math.sin(cell.phase + (isCancer ? 0 : Math.PI));
+
+    let r, g, b, a;
+    if (isCancer) {
+      // Transition: teal→red
+      const transition = Math.min(1, cancerRatio * 2);
+      r = Math.round(0   + 255 * transition);
+      g = Math.round(223 * (1 - transition) + 31 * transition);
+      b = Math.round(184 * (1 - transition) + 61 * transition);
+      a = (0.06 + pulse * 0.1) * Math.min(1, cancerRatio * 3);
+    } else {
+      r = 0; g = 223; b = 184;
+      a = 0.03 + pulse * 0.05;
+    }
+
+    const radius = isCancer
+      ? (2.5 + pulse * 1.5)
+      : (1.5 + pulse * 1.0);
+
+    cx.beginPath();
+    cx.arc(cell.x, cell.y, radius, 0, Math.PI * 2);
+    cx.fillStyle = `rgba(${r},${g},${b},${a.toFixed(3)})`;
+    cx.fill();
+  });
+}
+requestAnimationFrame(paint);
+
+/* ─── INTERSECTION OBSERVER ────────────── */
+document.querySelectorAll(
+  '.block,.rebel-zone,.expo-zone,.origin-zone,.spirit,.scripture,.jesus-zone,.closing,.sin-item'
+).forEach(el => {
+  new IntersectionObserver(
+    entries => entries.forEach(e => {
+      if (e.isIntersecting) e.target.classList.add('in');
+    }),
+    { threshold: 0.06, rootMargin: '0px 0px -44px 0px' }
+  ).observe(el);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>조용히 망가지는 장기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=Noto+Serif+KR:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-style:normal !important; }
+html { scroll-behavior:smooth; }
+
+:root {
+  --paper:   #F3EFE7;
+  --ink:     #0C0C0C;
+  --dim:     #5A5550;
+  --warn:    #C80000;
+  --damage:  #C8402A;
+  --flesh:   #D98A6A;
+  --grid:    rgba(0,0,0,0.055);
+  --safe:    #0F6B3C;
+  --gold:    #B8810E;
+  --gold-bg: #FBF5E0;
+  --bar:     'Barlow Condensed', sans-serif;
+  --serif:   'Noto Serif KR', serif;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  overflow-x: hidden;
+}
+
+/* ── GRAPH PAPER BACKGROUND ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── TICKER ── */
+.ticker-wrap {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 300;
+  background: var(--ink);
+  height: 32px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+.ticker-inner {
+  display: flex;
+  white-space: nowrap;
+  animation: tickerRun 38s linear infinite;
+}
+.ticker-item {
+  font-family: var(--bar);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: #F3EFE7;
+  padding: 0 30px;
+}
+.ticker-item.warn { color: #FF4444; }
+@keyframes tickerRun {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── FIXED LEFT PANEL ── */
+#left-panel {
+  position: fixed;
+  top: 32px; left: 0;
+  width: 88px;
+  bottom: 0;
+  background: var(--ink);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 0 28px;
+  gap: 24px;
+}
+
+.gauge-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.gauge-label {
+  font-family: var(--bar);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.28em;
+  color: rgba(243,239,231,0.45);
+  text-align: center;
+}
+
+.gauge-track {
+  width: 26px;
+  flex: 1;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+}
+
+.gauge-fill {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 0%;
+  border-radius: 2px;
+  transition: height 0.5s cubic-bezier(0.4,0,0.2,1),
+              background 0.8s ease;
+  background: var(--flesh);
+}
+
+.gauge-track::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  bottom: 70%;
+  height: 1px;
+  background: rgba(255,100,60,0.5);
+  z-index: 2;
+}
+
+.gauge-pct {
+  font-family: var(--bar);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: rgba(243,239,231,0.6);
+  transition: color 0.6s ease;
+  min-width: 38px;
+  text-align: center;
+}
+
+.gauge-status {
+  font-family: var(--bar);
+  font-weight: 700;
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  color: rgba(243,239,231,0.3);
+  text-align: center;
+  transition: color 0.6s ease;
+  line-height: 1.3;
+}
+
+.gauge-block.critical .gauge-fill  { background: var(--damage) !important; }
+.gauge-block.critical .gauge-pct   { color: #FF5533 !important; }
+.gauge-block.critical .gauge-status { color: #FF5533 !important; animation: blink 1s ease-in-out infinite; }
+.gauge-block.healed  .gauge-fill   { background: var(--safe) !important; }
+.gauge-block.healed  .gauge-pct    { color: #44CC88 !important; }
+.gauge-block.healed  .gauge-status { color: #44CC88 !important; animation: none; }
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.panel-divider {
+  width: 40px; height: 1px;
+  background: rgba(255,255,255,0.1);
+}
+
+/* ── MAIN CONTENT ── */
+.main {
+  margin-left: 88px;
+  padding-top: 32px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: clamp(44px,8vw,110px);
+  padding-bottom: clamp(80px,12vh,140px);
+  border-bottom: 1px solid rgba(0,0,0,0.12);
+  position: relative;
+}
+
+.hero-stamp {
+  position: absolute;
+  top: clamp(44px,8vw,90px); right: clamp(44px,8vw,90px);
+  width: clamp(90px,11vw,130px);
+  height: clamp(90px,11vw,130px);
+  border: 3px solid var(--warn);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.18;
+}
+.hero-stamp span {
+  font-family: var(--bar);
+  font-weight: 900;
+  font-size: clamp(10px,1.2vw,14px);
+  letter-spacing: 0.2em;
+  color: var(--warn);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.hero-tag {
+  font-family: var(--bar);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.38em;
+  color: var(--dim);
+  margin-bottom: 28px;
+}
+
+h1.hero-title {
+  font-family: var(--bar);
+  font-weight: 900;
+  font-size: clamp(62px, 9.5vw, 138px);
+  line-height: 0.92;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  max-width: 700px;
+}
+
+h1.hero-title .sub-title {
+  display: block;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(14px, 1.8vw, 20px);
+  letter-spacing: 0.04em;
+  color: var(--dim);
+  margin-top: 22px;
+  line-height: 1.7;
+}
+
+/* ── SECTION BLOCK ── */
+.s-block {
+  padding: clamp(60px,9vh,110px) clamp(44px,8vw,100px);
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+  position: relative;
+}
+.s-block.in { opacity:1; transform:translateY(0); }
+
+.side-label {
+  position: absolute;
+  left: -6px; top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+  transform-origin: center;
+  font-family: var(--bar);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.32em;
+  color: rgba(0,0,0,0.15);
+  white-space: nowrap;
+}
+
+.organ-heading {
+  font-family: var(--bar);
+  font-weight: 900;
+  font-size: clamp(42px,7vw,96px);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin-bottom: 32px;
+}
+.organ-heading sup {
+  font-size: 0.25em;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  color: var(--dim);
+  vertical-align: super;
+}
+
+.stat-row {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin: 22px 0;
+  padding: 18px 22px;
+  border: 1px solid rgba(0,0,0,0.1);
+  background: rgba(255,255,255,0.5);
+}
+.stat-num {
+  font-family: var(--bar);
+  font-weight: 700;
+  font-size: clamp(28px,4vw,52px);
+  color: var(--ink);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.stat-unit {
+  font-family: var(--bar);
+  font-weight: 400;
+  font-size: clamp(12px,1.5vw,15px);
+  color: var(--dim);
+  letter-spacing: 0.1em;
+}
+
+.prose-body {
+  font-size: clamp(15px,1.8vw,18px);
+  line-height: 2.05;
+  color: #2A2520;
+  font-weight: 400;
+  max-width: 600px;
+  margin-bottom: 1.2em;
+}
+.prose-body:last-child { margin-bottom:0; }
+
+.warn-box {
+  margin: 28px 0;
+  padding: 20px 24px;
+  border-left: 3px solid var(--warn);
+  background: rgba(200,0,0,0.04);
+  position: relative;
+}
+.warn-box::before {
+  content: '! WARNING';
+  position: absolute;
+  top: -1px; left: -1px;
+  font-family: var(--bar);
+  font-weight: 700;
+  font-size: 8px;
+  letter-spacing: 0.3em;
+  color: var(--warn);
+  background: var(--paper);
+  padding: 0 8px;
+  transform: translateY(-50%);
+}
+.warn-box p {
+  font-size: clamp(14px,1.7vw,17px);
+  line-height: 1.9;
+  color: #1A0A0A;
+  font-weight: 600;
+}
+
+/* ── SILENT ZONE ── */
+.silent-zone {
+  padding: clamp(70px,10vh,130px) clamp(44px,8vw,100px);
+  background: var(--ink);
+  color: var(--paper);
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.silent-zone.in { opacity:1; transform:translateY(0); }
+
+.silent-zone::before {
+  content: '침묵';
+  position: absolute;
+  right: -0.05em; bottom: -0.12em;
+  font-family: var(--bar);
+  font-weight: 900;
+  font-size: clamp(160px,25vw,380px);
+  color: rgba(255,255,255,0.04);
+  line-height: 1;
+  pointer-events: none;
+  letter-spacing: -0.04em;
+}
+
+.silent-heading {
+  font-family: var(--bar);
+  font-weight: 900;
+  font-size: clamp(34px,5.5vw,76px);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: #F3EFE7;
+  position: relative;
+  max-width: 640px;
+  margin-bottom: 28px;
+}
+.silent-heading .accent { color: #FF4422; }
+
+.silent-prose {
+  font-size: clamp(15px,1.8vw,18px);
+  line-height: 2.05;
+  color: rgba(243,239,231,0.78);
+  font-weight: 400;
+  max-width: 580px;
+  margin-bottom: 1.2em;
+  position: relative;
+}
+.silent-prose.bold { color: #F3EFE7; font-weight: 600; }
+.silent-prose:last-child { margin-bottom:0; }
+
+/* ── SPIRIT ZONE ── */
+.spirit-zone {
+  padding: clamp(60px,8vh,110px) clamp(44px,8vw,100px);
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+  position: relative;
+}
+.spirit-zone.in { opacity:1; transform:translateY(0); }
+.spirit-zone.no-top { border-top: none; padding-top: 0; }
+
+.spirit-tag {
+  font-family: var(--bar);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.35em;
+  color: var(--dim);
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.spirit-tag::before {
+  content: '';
+  display: block;
+  width: 18px; height: 1px;
+  background: var(--dim);
+}
+
+.spirit-prose {
+  font-size: clamp(15px,1.8vw,18px);
+  line-height: 2.1;
+  color: #1C1814;
+  font-weight: 400;
+  max-width: 620px;
+  margin-bottom: 1.2em;
+}
+.spirit-prose:last-child { margin-bottom:0; }
+
+.big-quote {
+  font-family: var(--bar);
+  font-weight: 700;
+  font-size: clamp(20px,3.2vw,40px);
+  line-height: 1.35;
+  color: var(--ink);
+  margin: 22px 0;
+  letter-spacing: -0.01em;
+}
+
+/* ── SCRIPTURE ── */
+.scripture {
+  margin: 28px 0;
+  padding: 26px 32px;
+  border-left: 3px solid;
+  opacity: 0;
+  transform: translateX(-18px);
+  transition: opacity 0.75s ease, transform 0.75s ease;
+}
+.scripture.in { opacity:1; transform:translateX(0); }
+.scripture.red   { border-color: var(--warn); background: rgba(200,0,0,0.03); }
+.scripture.gold  { border-color: var(--gold); background: var(--gold-bg); }
+.scripture.green { border-color: var(--safe); background: rgba(15,107,60,0.04); }
+
+.scr-ref {
+  font-family: var(--bar);
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  display: block;
+  margin-bottom: 12px;
+}
+.scripture.red   .scr-ref { color: var(--warn); }
+.scripture.gold  .scr-ref { color: var(--gold); }
+.scripture.green .scr-ref { color: var(--safe); }
+.scripture p {
+  font-size: clamp(16px,2vw,20px);
+  line-height: 1.9;
+  font-weight: 600;
+  color: var(--ink);
+}
+.scripture.gold p { color: #1A1000; }
+
+/* ── JESUS ZONE ── */
+.jesus-zone {
+  padding: clamp(70px,10vh,130px) clamp(44px,8vw,100px);
+  background: var(--gold-bg);
+  border-top: 1px solid rgba(184,129,14,0.2);
+  border-bottom: 1px solid rgba(184,129,14,0.2);
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.9s ease, transform 0.9s ease;
+}
+.jesus-zone.in { opacity:1; transform:translateY(0); }
+
+.jesus-name {
+  font-family: var(--bar);
+  font-weight: 900;
+  font-size: clamp(48px,8vw,118px);
+  line-height: 0.9;
+  color: var(--gold);
+  letter-spacing: -0.02em;
+  display: block;
+  text-shadow: 2px 2px 0 rgba(184,129,14,0.15);
+  margin: 18px 0 14px;
+}
+.jesus-sub {
+  display: block;
+  font-family: var(--bar);
+  font-weight: 400;
+  font-size: clamp(11px,1.3vw,14px);
+  letter-spacing: 0.3em;
+  color: rgba(184,129,14,0.55);
+  margin-bottom: 28px;
+}
+
+/* ── CLOSING / RECOVERY ── */
+.recovery-zone {
+  padding: clamp(60px,8vh,110px) clamp(44px,8vw,100px);
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.recovery-zone.in { opacity:1; transform:translateY(0); }
+.recovery-zone .spirit-prose { max-width:620px; }
+
+.closing {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  padding: clamp(60px,10vw,140px);
+  background: var(--ink);
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 1s ease, transform 1s ease;
+  position: relative;
+  overflow: hidden;
+}
+.closing::before {
+  content: 'NEW';
+  position: absolute;
+  right: -0.05em; bottom: -0.1em;
+  font-family: var(--bar);
+  font-weight: 900;
+  font-size: clamp(150px,22vw,340px);
+  color: rgba(255,255,255,0.03);
+  line-height: 1;
+  pointer-events:none;
+}
+.closing.in { opacity:1; transform:translateY(0); }
+.closing p {
+  font-size: clamp(17px,2.3vw,24px);
+  line-height: 2.15;
+  color: rgba(243,239,231,0.85);
+  font-weight: 400;
+  max-width: 620px;
+  margin-bottom: 1.1em;
+  position: relative;
+}
+.closing p.em {
+  color: #F3EFE7;
+  font-weight: 600;
+}
+</style>
+</head>
+<body>
+
+<!-- ── TICKER ── -->
+<div class="ticker-wrap">
+  <div class="ticker-inner" id="ticker"></div>
+</div>
+
+<!-- ── LEFT PANEL ── -->
+<div id="left-panel">
+  <div class="gauge-block" id="g-liver">
+    <div class="gauge-label">간<br>LIVER</div>
+    <div class="gauge-track">
+      <div class="gauge-fill" id="liver-fill"></div>
+    </div>
+    <div class="gauge-pct" id="liver-pct">0%</div>
+    <div class="gauge-status" id="liver-status">NORMAL</div>
+  </div>
+
+  <div class="panel-divider"></div>
+
+  <div class="gauge-block" id="g-kidney">
+    <div class="gauge-label">신장<br>KIDNEY</div>
+    <div class="gauge-track">
+      <div class="gauge-fill" id="kidney-fill"></div>
+    </div>
+    <div class="gauge-pct" id="kidney-pct">0%</div>
+    <div class="gauge-status" id="kidney-status">NORMAL</div>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-stamp"><span>침묵의<br>장기</span></div>
+  <div class="hero-tag">SILENT ORGAN REPORT · 진단 보고서</div>
+  <h1 class="hero-title">
+    조용히<br>망가지는<br>장기
+    <span class="sub-title">— 간과 신장, 그리고 영혼의 이야기</span>
+  </h1>
+</section>
+
+<!-- ── 서론 ── -->
+<div class="s-block" id="b0">
+  <div class="side-label">INTRODUCTION</div>
+  <p class="prose-body">우리 몸에는 특별한 장기들이 있습니다.</p>
+  <p class="prose-body">그 장기들은 조금 이상합니다.</p>
+  <p class="prose-body">아프면 바로 통증을 느끼는 장기도 많은데 이 장기들은 그렇지 않습니다. 그래서 의사들은 이 장기들을 이렇게 부릅니다.</p>
+  <div class="warn-box"><p>"침묵의 장기."</p></div>
+  <p class="prose-body">대표적인 것이 간과 신장입니다.</p>
+</div>
+
+<!-- ── 간 ── -->
+<div class="s-block" id="b-liver">
+  <div class="side-label">LIVER · 간</div>
+  <div class="organ-heading">간<sup>LIVER</sup></div>
+  <p class="prose-body">간은 우리 몸에서 가장 큰 내부 장기입니다.</p>
+  <div class="stat-row">
+    <div class="stat-num">1.5 <span style="font-size:0.5em;font-weight:400;letter-spacing:0.08em;color:var(--dim)">kg</span></div>
+    <div class="stat-unit">성인의 간 무게</div>
+  </div>
+  <p class="prose-body">간은 놀라울 정도로 많은 일을 합니다.</p>
+  <p class="prose-body">음식을 먹으면 영양분을 저장하고 몸에 들어온 독소를 분해하고 약물과 알코올을 처리하고 혈액 속의 여러 화학 물질의 균형을 유지합니다.</p>
+  <p class="prose-body">의학적으로 말하면</p>
+  <div class="stat-row">
+    <div class="stat-num">500<span style="font-size:0.5em;font-weight:400;letter-spacing:0.08em;color:var(--dim)">+ 가지</span></div>
+    <div class="stat-unit">간이 수행하는 기능</div>
+  </div>
+  <p class="prose-body">그래서 어떤 의사는 간을 이렇게 부릅니다.</p>
+  <div class="warn-box"><p>"몸 안에 있는 거대한 화학 공장."</p></div>
+  <p class="prose-body">그런데 놀라운 사실이 있습니다.</p>
+  <p class="prose-body">간은 많이 망가져도 처음에는 거의 아프지 않습니다. 그래서 간 질환을 가진 많은 사람들이 병이 상당히 진행될 때까지도 자신이 아픈 줄 모르는 경우가 많습니다.</p>
+  <div class="stat-row">
+    <div class="stat-num">70~80%</div>
+    <div class="stat-unit">손상되어도 증상이 나타나지 않는 경우가 있음</div>
+  </div>
+  <p class="prose-body">그래서 간 질환은 종종 늦게 발견됩니다.</p>
+</div>
+
+<!-- ── 신장 ── -->
+<div class="s-block" id="b-kidney">
+  <div class="side-label">KIDNEY · 신장</div>
+  <div class="organ-heading">신장<sup>KIDNEY</sup></div>
+  <p class="prose-body">신장도 마찬가지입니다.</p>
+  <p class="prose-body">신장은 등 뒤쪽에 있는 주먹만 한 장기 두 개입니다. 하지만 그 역할은 매우 중요합니다.</p>
+  <div class="stat-row">
+    <div class="stat-num">180<span style="font-size:0.5em;font-weight:400;letter-spacing:0.08em;color:var(--dim)"> 리터 / 일</span></div>
+    <div class="stat-unit">신장이 하루에 걸러내는 혈액의 양</div>
+  </div>
+  <p class="prose-body">몸에 필요한 것과 버려야 할 것을 구분합니다.</p>
+  <p class="prose-body">노폐물과 독소는 소변으로 배출하고 몸에 필요한 물과 전해질은 다시 혈액으로 돌려보냅니다.</p>
+  <p class="prose-body">그래서 신장은 우리 몸의 정수기 같은 장기입니다.</p>
+  <p class="prose-body">그런데 신장도 간과 비슷한 특징이 있습니다.</p>
+  <div class="warn-box">
+    <p>신장 기능이 절반 이상 망가질 때까지도 뚜렷한 증상이 없는 경우가 많습니다. 그래서 많은 환자들이 병이 상당히 진행된 후에야 자신이 아프다는 사실을 알게 됩니다.</p>
+  </div>
+</div>
+
+<!-- ── 침묵의 파괴 ── -->
+<div class="silent-zone" id="b-silent">
+  <div class="silent-heading">조용히<br>진행되는<br><span class="accent">파괴</span></div>
+  <p class="silent-prose">그래서 의사들은 간과 신장 질환을 설명할 때 이런 표현을 자주 사용합니다.</p>
+  <p class="silent-prose bold">"조용히 진행되는 병."</p>
+  <p class="silent-prose">겉으로는 멀쩡해 보이지만 몸 안에서는 파괴가 조용히 그리고 천천히 진행되고 있기 때문입니다.</p>
+</div>
+
+<!-- ── 영적 병행 ── -->
+<div class="spirit-zone" id="b-spirit1">
+  <div class="spirit-tag">SPIRITUAL PARALLEL · 영적 병행</div>
+  <p class="spirit-prose">이 모습을 가만히 생각해 보면 우리의 영적인 상태와도 매우 닮아 있습니다.</p>
+  <p class="spirit-prose">사람은 겉으로 보면 멀쩡해 보입니다. 웃기도 하고 일도 하고 성공하기도 합니다.</p>
+  <p class="spirit-prose">그러나 성경은 우리 안에 있는 보이지 않는 문제를 말합니다.</p>
+  <div class="big-quote">바로 죄입니다.</div>
+  <p class="spirit-prose">죄는 종종 처음에는 크게 느껴지지 않습니다. 그래서 사람은 이렇게 생각합니다.</p>
+  <p class="spirit-prose">"괜찮겠지."<br>"이 정도는 문제 없겠지."<br>"다들 이렇게 사는데 뭐."</p>
+  <p class="spirit-prose">하지만 죄는 우리의 영혼을 조용히 망가뜨립니다. 겉으로는 멀쩡해 보여도 하나님과의 관계는 점점 멀어지게 됩니다.</p>
+  <p class="spirit-prose">그래서 성경은 이렇게 말합니다.</p>
+</div>
+
+<div class="spirit-zone no-top" id="b-scr1">
+  <div class="scripture red" id="scr1">
+    <span class="scr-ref">로마서 6장 23절</span>
+    <p>"죄의 대가는 죽음이지만"</p>
+  </div>
+  <p class="spirit-prose">죄는 결국 영혼을 죽음으로 이끌기 때문입니다.</p>
+</div>
+
+<!-- ── 하나님이 주신 길 ── -->
+<div class="jesus-zone" id="b-jesus">
+  <div class="spirit-tag" style="color:rgba(184,129,14,0.6);">GOD'S WAY · 하나님이 주신 길</div>
+  <p class="spirit-prose" style="max-width:600px; margin-bottom:22px;">하지만 하나님은 우리 영혼이 멸망하도록 내버려 두지 않으셨습니다. 그래서 우리에게 한 분을 보내셨습니다.</p>
+  <span class="jesus-name">예수 그리스도</span>
+  <span class="jesus-sub">JESUS CHRIST · 죄로 인해 망가진 영혼을 다시 살리시는 분</span>
+  <p class="spirit-prose" style="max-width:600px; margin-top:10px;">예수님은 이렇게 말씀하셨습니다.</p>
+  <div class="scripture gold" id="scr2">
+    <span class="scr-ref">요한복음 14장 6절</span>
+    <p>"내가 곧 길이요 실재요 생명이니, 나를 통하지 않고서는 아무도 아버지께로 가지 못합니다."</p>
+  </div>
+  <p class="spirit-prose" style="max-width:600px;">예수 그리스도는 죄로 인해 망가진 우리의 영혼을 다시 살리시는 분입니다. 그래서 성경은 말합니다.</p>
+  <div class="scripture green" id="scr3">
+    <span class="scr-ref">고린도후서 5장 17절</span>
+    <p>"그러므로 누구든지 그리스도 안에 있으면 새 창조물입니다. 옛것들은 지나갔습니다. 보십시오, 새것이 되었습니다."</p>
+  </div>
+</div>
+
+<!-- ── 조용히 망가질 수도, 새롭게 살아날 수도 ── -->
+<div class="recovery-zone" id="b-recovery">
+  <div class="spirit-tag">RECOVERY · 회복</div>
+  <p class="spirit-prose">간과 신장은 조용히 망가질 수 있습니다. 그래서 우리는 몸을 돌보고 검사를 받고 건강을 관리해야 합니다.</p>
+  <p class="spirit-prose">영혼도 마찬가지입니다.</p>
+  <p class="spirit-prose">우리의 영혼은 죄로 인해 조용히 멀어질 수도 있고 예수 그리스도를 통해 다시 새롭게 살아날 수도 있습니다.</p>
+</div>
+
+<!-- ── CLOSING ── -->
+<div class="closing" id="b-closing">
+  <div>
+    <p>그래서 하나님은 오늘도 우리를 부르십니다.</p>
+    <p class="em">생명의 길로 돌아오라고.</p>
+  </div>
+</div>
+
+</div><!-- .main -->
+
+<script>
+/* ── TICKER ──────────────────────────────────── */
+const items = [
+  { t:'침묵의 장기 · SILENT ORGAN', w:false },
+  { t:'간 · LIVER · 70~80% 손상 무증상', w:true },
+  { t:'신장 · KIDNEY · 50% 손상까지 무증상', w:true },
+  { t:'조용히 진행되는 병', w:false },
+  { t:'SILENT DAMAGE IN PROGRESS', w:true },
+  { t:'겉으로는 멀쩡해 보이지만', w:false },
+  { t:'죄는 결국 영혼을 죽음으로 이끈다', w:true },
+  { t:'예수 그리스도 · JESUS CHRIST', w:false },
+  { t:'새 창조물 · NEW CREATION', w:false },
+  { t:'생명의 길로 돌아오라', w:false },
+];
+const ticker = document.getElementById('ticker');
+[...items, ...items].forEach(item => {
+  const el = document.createElement('div');
+  el.className = 'ticker-item' + (item.w ? ' warn' : '');
+  el.textContent = item.t;
+  ticker.appendChild(el);
+});
+
+/* ── GAUGE ────────────────────────────────────── */
+const sectIds  = ['b0','b-liver','b-kidney','b-silent','b-spirit1','b-scr1','b-jesus','b-recovery','b-closing'];
+const liverDmg = [ 2,   18,      60,        78,        78,         78,      0,        0,           0];
+const kidnDmg  = [ 2,    5,      22,        50,        55,         55,      0,        0,           0];
+const healed   = [false,false,false,false,false,false,true,true,true];
+
+let lPct = 0, kPct = 0;
+
+function lerp(a,b,t){ return a+(b-a)*Math.min(1,Math.max(0,t)); }
+
+function updateGauges(){
+  const vh = window.innerHeight;
+  const sects = sectIds.map(id=>document.getElementById(id));
+  let idx = 0;
+  sects.forEach((s,i)=>{
+    if(!s) return;
+    if(s.getBoundingClientRect().top < vh*0.55) idx=i;
+  });
+
+  let frac = 0;
+  const cur  = sects[idx];
+  const next = sects[Math.min(idx+1, sects.length-1)];
+  if(cur && next && idx < sects.length-1){
+    const cr = cur.getBoundingClientRect().top;
+    const nr = next.getBoundingClientRect().top;
+    frac = nr!==cr ? Math.max(0,Math.min(1,(vh*0.55-cr)/(nr-cr))) : 0;
+  }
+
+  const ni = Math.min(idx+1, liverDmg.length-1);
+  const tL = lerp(liverDmg[idx], liverDmg[ni], frac);
+  const tK = lerp(kidnDmg[idx],  kidnDmg[ni],  frac);
+
+  lPct += (tL - lPct) * 0.08;
+  kPct += (tK - kPct) * 0.08;
+
+  document.getElementById('liver-fill').style.height  = lPct+'%';
+  document.getElementById('kidney-fill').style.height = kPct+'%';
+  document.getElementById('liver-pct').textContent  = Math.round(lPct)+'%';
+  document.getElementById('kidney-pct').textContent = Math.round(kPct)+'%';
+
+  const gL = document.getElementById('g-liver');
+  const gK = document.getElementById('g-kidney');
+  const lStat = document.getElementById('liver-status');
+  const kStat = document.getElementById('kidney-status');
+
+  if(healed[idx]){
+    [gL,gK].forEach(g=>{g.classList.remove('critical'); g.classList.add('healed');});
+    lStat.textContent = 'RESTORED';
+    kStat.textContent = 'RESTORED';
+  } else if(lPct > 65){
+    [gL,gK].forEach(g=>{g.classList.add('critical'); g.classList.remove('healed');});
+    lStat.textContent = 'CRITICAL';
+    kStat.textContent = 'CRITICAL';
+  } else if(lPct > 30){
+    [gL,gK].forEach(g=>{g.classList.remove('critical','healed');});
+    lStat.textContent = 'WARNING';
+    kStat.textContent = 'WARNING';
+  } else {
+    [gL,gK].forEach(g=>{g.classList.remove('critical','healed');});
+    lStat.textContent = 'NORMAL';
+    kStat.textContent = 'NORMAL';
+  }
+
+  requestAnimationFrame(updateGauges);
+}
+requestAnimationFrame(updateGauges);
+
+/* ── INTERSECTION OBSERVER ──────────────────── */
+document.querySelectorAll(
+  '.s-block,.silent-zone,.spirit-zone,.jesus-zone,.recovery-zone,.closing,.scripture'
+).forEach(el=>{
+  new IntersectionObserver(
+    entries=>entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('in'); }),
+    { threshold:0.06, rootMargin:'0px 0px -44px 0px' }
+  ).observe(el);
+});
+</script>
+</body>
+</html>

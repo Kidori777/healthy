@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>막혀있는 혈관을 푸는 약 — 스타틴과 복음</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Noto+Serif+KR:wght@400;600;900&family=Bebas+Neue&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:#0e0608;color:#f0e8e8;font-family:'Noto Sans KR',sans-serif;overflow-x:hidden;cursor:default;}
+
+/* ══ 혈관 캔버스 (고정 배경) ══ */
+#vessel-canvas{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  z-index:0;pointer-events:none;
+}
+
+/* ══ 스크롤 본문 ══ */
+main{position:relative;z-index:2;max-width:780px;margin:0 auto;padding:0 clamp(20px,5vw,60px) 120px;}
+
+/* ══ 히어로 ══ */
+.hero{
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  justify-content:center;padding:80px 0 60px;
+  position:relative;
+}
+.hero-label{
+  font-family:'Special Elite',serif;font-size:10px;
+  letter-spacing:0.5em;text-transform:uppercase;
+  color:rgba(220,80,80,0.6);margin-bottom:14px;
+  opacity:0;animation:fadeUp 1s 0.4s forwards;
+}
+.hero-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(48px,10vw,118px);
+  line-height:0.88;letter-spacing:0.02em;
+  color:#fff;margin-bottom:14px;word-break:keep-all;
+  opacity:0;animation:fadeUp 1.2s 0.7s forwards;
+}
+.hero-title .red{color:#e84040;}
+.hero-sub{
+  font-family:'Noto Serif KR',serif;
+  font-size:clamp(14px,2vw,18px);
+  color:rgba(240,200,200,0.65);line-height:1.8;
+  word-break:keep-all;max-width:480px;
+  opacity:0;animation:fadeUp 1s 1s forwards;
+}
+.scroll-arrow{
+  position:absolute;bottom:40px;left:0;
+  opacity:0;animation:fadeIn 1s 1.8s forwards;
+  display:flex;align-items:center;gap:10px;
+  font-family:'Special Elite',serif;font-size:9px;
+  letter-spacing:0.4em;text-transform:uppercase;
+  color:rgba(220,80,80,0.4);
+}
+.scroll-arrow .line{
+  width:40px;height:1px;
+  background:linear-gradient(to right,rgba(220,80,80,0.4),transparent);
+}
+
+/* ══ 섹션 공통 ══ */
+.section{
+  padding:72px 0 40px;
+  opacity:0;transform:translateY(20px);
+  transition:opacity 0.9s,transform 0.9s;
+}
+.section.vis{opacity:1;transform:translateY(0)}
+
+.sec-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(80px,15vw,160px);
+  color:rgba(180,30,30,0.08);
+  line-height:0.8;position:absolute;
+  right:0;top:-20px;pointer-events:none;
+  letter-spacing:-0.02em;
+}
+.sec-wrap{position:relative;}
+
+.sec-tag{
+  font-family:'Special Elite',serif;font-size:9px;
+  letter-spacing:0.5em;text-transform:uppercase;
+  color:rgba(220,80,80,0.55);margin-bottom:12px;display:block;
+}
+.sec-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(28px,5vw,56px);
+  color:#fff;line-height:0.92;letter-spacing:0.02em;
+  margin-bottom:18px;word-break:keep-all;
+}
+
+/* ══ 본문 카드 ══ */
+.vessel-card{
+  background:rgba(30,6,6,0.85);
+  border:1px solid rgba(180,40,40,0.2);
+  border-left:3px solid rgba(180,40,40,0.5);
+  padding:24px 28px;margin:16px 0;
+  backdrop-filter:blur(4px);
+  position:relative;
+}
+.vessel-card p{
+  font-family:'Noto Sans KR',sans-serif;
+  font-size:14.5px;line-height:2.15;
+  color:rgba(240,220,220,0.78);word-break:keep-all;margin-bottom:0.7em;
+}
+.vessel-card p:last-child{margin-bottom:0;}
+.vessel-card p strong{color:#fff;font-weight:700;}
+
+/* LDL/HDL 설명 박스 */
+.lipo-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:3px;
+  margin:20px 0;
+}
+.lipo-item{
+  background:rgba(20,5,5,0.9);
+  border:1px solid rgba(150,30,30,0.2);
+  padding:16px 18px;
+}
+.lipo-label{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:22px;letter-spacing:0.06em;
+  margin-bottom:6px;
+}
+.lipo-item.ldl .lipo-label{color:#e84040;}
+.lipo-item.hdl .lipo-label{color:#40b0e8;}
+.lipo-sub{
+  font-family:'Special Elite',serif;font-size:8px;
+  letter-spacing:0.3em;text-transform:uppercase;margin-bottom:8px;
+  display:block;
+}
+.lipo-item.ldl .lipo-sub{color:rgba(220,80,80,0.5);}
+.lipo-item.hdl .lipo-sub{color:rgba(64,176,232,0.5);}
+.lipo-desc{
+  font-family:'Noto Sans KR',sans-serif;font-size:13px;
+  line-height:1.85;color:rgba(220,200,200,0.65);word-break:keep-all;
+}
+
+/* ══ 혈관 시각화 인터랙티브 ══ */
+#vessel-viz{
+  margin:32px 0;
+  background:rgba(15,3,3,0.95);
+  border:1px solid rgba(180,40,40,0.2);
+  padding:28px 24px;
+  position:relative;overflow:hidden;
+}
+#vessel-viz-title{
+  font-family:'Special Elite',serif;font-size:9px;
+  letter-spacing:0.4em;text-transform:uppercase;
+  color:rgba(220,80,80,0.5);margin-bottom:16px;
+  display:block;text-align:center;
+}
+#viz-canvas-wrap{
+  position:relative;
+  width:100%;height:180px;
+}
+#viz-canvas{width:100%;height:100%;display:block;}
+.viz-labels{
+  display:flex;justify-content:space-between;
+  margin-top:10px;
+}
+.viz-label{
+  font-family:'Special Elite',serif;font-size:8px;
+  letter-spacing:0.25em;text-transform:uppercase;
+  color:rgba(200,160,160,0.4);
+}
+
+/* 스타틴 버튼 */
+#statin-btn{
+  display:block;margin:20px auto 0;
+  padding:12px 44px;
+  border:1px solid rgba(220,80,80,0.4);
+  background:rgba(180,30,30,0.15);
+  color:rgba(255,180,180,0.85);
+  font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;
+  cursor:pointer;letter-spacing:0.08em;
+  transition:all 0.25s;border-radius:2px;
+}
+#statin-btn:hover{background:rgba(220,40,40,0.3);border-color:rgba(220,80,80,0.8);}
+#statin-btn:disabled{opacity:0.4;cursor:default;}
+#statin-result{
+  text-align:center;margin-top:14px;
+  font-family:'Noto Serif KR',serif;font-size:14px;
+  color:rgba(255,200,200,0.8);line-height:1.8;word-break:keep-all;
+  min-height:28px;transition:opacity 0.5s;
+  opacity:0;
+}
+#statin-result.show{opacity:1;}
+
+/* ══ 성경 구절 ══ */
+.verse-block{
+  border-top:1px solid rgba(180,40,40,0.2);
+  padding:22px 0 18px;margin:22px 0;
+}
+.verse-ref{
+  font-family:'Special Elite',serif;font-size:9px;
+  letter-spacing:0.45em;text-transform:uppercase;
+  color:rgba(220,80,80,0.55);margin-bottom:10px;display:block;
+}
+.verse-text{
+  font-family:'Noto Serif KR',serif;
+  font-size:clamp(15px,2.4vw,20px);font-weight:600;
+  color:#f5e8e8;line-height:1.85;word-break:keep-all;
+}
+
+/* ══ 비교 다이어그램 (LDL vs 영적 LDL) ══ */
+.compare-grid{
+  display:grid;grid-template-columns:1fr 36px 1fr;
+  gap:0;margin:24px 0;align-items:center;
+}
+.cmp-item{
+  background:rgba(20,5,5,0.8);
+  border:1px solid rgba(150,30,30,0.2);
+  padding:20px 18px;
+}
+.cmp-divider{
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;font-size:22px;
+  color:rgba(220,80,80,0.4);
+}
+.cmp-tag{
+  font-family:'Special Elite',serif;font-size:8px;
+  letter-spacing:0.3em;text-transform:uppercase;
+  color:rgba(220,80,80,0.5);margin-bottom:8px;display:block;
+}
+.cmp-head{
+  font-family:'Bebas Neue',sans-serif;font-size:20px;
+  color:#fff;margin-bottom:8px;letter-spacing:0.04em;
+}
+.cmp-body{
+  font-size:13px;line-height:1.85;
+  color:rgba(220,190,190,0.65);word-break:keep-all;
+}
+
+/* ══ 클로징 — 기도 섹션 ══ */
+.closing-section{
+  padding:60px 0 40px;text-align:center;
+}
+.closing-big{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(36px,7vw,82px);
+  color:#fff;line-height:0.9;letter-spacing:0.03em;
+  text-shadow:0 0 40px rgba(220,60,60,0.25);
+  margin-bottom:20px;word-break:keep-all;
+}
+.closing-p{
+  font-family:'Noto Serif KR',serif;font-size:15px;
+  line-height:2.2;color:rgba(230,200,200,0.72);
+  word-break:keep-all;margin-bottom:0.85em;
+  max-width:540px;margin-left:auto;margin-right:auto;
+}
+.contact-box{
+  display:inline-block;margin-top:24px;
+  border:1px solid rgba(180,40,40,0.3);
+  padding:16px 32px;
+  background:rgba(30,6,6,0.8);
+}
+.contact-box p{
+  font-family:'Noto Sans KR',sans-serif;font-size:13px;
+  line-height:1.9;color:rgba(220,180,180,0.7);
+}
+.contact-box .church{
+  font-family:'Bebas Neue',sans-serif;font-size:22px;
+  color:rgba(220,80,80,0.8);letter-spacing:0.06em;
+  margin-bottom:4px;
+}
+.contact-box .tel{
+  font-family:'Special Elite',serif;font-size:14px;
+  letter-spacing:0.15em;color:rgba(255,200,200,0.6);
+}
+
+footer{
+  text-align:center;padding:24px 0 60px;
+  font-family:'Special Elite',serif;font-size:9px;
+  letter-spacing:0.4em;color:rgba(180,40,40,0.2);text-transform:uppercase;
+  position:relative;z-index:2;
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:#0e0608}
+::-webkit-scrollbar-thumb{background:rgba(180,40,40,0.3)}
+
+@media(max-width:560px){
+  .lipo-grid,.compare-grid{grid-template-columns:1fr;}
+  .cmp-divider{display:none;}
+}
+</style>
+</head>
+<body>
+
+<canvas id="vessel-canvas"></canvas>
+
+<main>
+
+  <!-- 히어로 -->
+  <div class="hero">
+    <span class="hero-label">Statin & Gospel · 혈관과 복음</span>
+    <h1 class="hero-title">
+      막혀있는<br>
+      혈관을<br>
+      <span class="red">푸는 약</span>
+    </h1>
+    <p class="hero-sub">콜레스테롤이 혈관을 막듯<br>죄와 교만이 영혼을 막습니다.<br>스타틴이 혈관을 열듯<br>복음이 영혼을 열어줍니다.</p>
+    <div class="scroll-arrow">
+      <div class="line"></div>
+      <span>Scroll</span>
+    </div>
+  </div>
+
+  <!-- 참조: LDL/HDL -->
+  <div class="section" id="s0">
+    <div class="sec-wrap">
+      <div class="sec-num">00</div>
+      <span class="sec-tag">Reference · 콜레스테롤 지질단백질</span>
+      <div class="lipo-grid">
+        <div class="lipo-item ldl">
+          <div class="lipo-label">LDL</div>
+          <span class="lipo-sub">Low Density Lipoprotein</span>
+          <p class="lipo-desc">저밀도 지질단백질. 간에서 세포로 콜레스테롤을 이동하는 운반선 역할. 과다하면 혈관에 쌓여 막힘을 유발.</p>
+        </div>
+        <div class="lipo-item hdl">
+          <div class="lipo-label">HDL</div>
+          <span class="lipo-sub">High Density Lipoprotein</span>
+          <p class="lipo-desc">고밀도 지질단백질. 세포에서 간으로 콜레스테롤을 회수하는 운반선 역할. 혈관 건강에 유익.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 섹션 1: 침묵 속 막힘 -->
+  <div class="section" id="s1">
+    <div class="sec-wrap">
+      <div class="sec-num">01</div>
+      <span class="sec-tag">Section 01 · 침묵 속에서 막히는 길</span>
+      <h2 class="sec-title">침묵 속에서<br>막히는 길</h2>
+
+      <div class="vessel-card">
+        <p>우리는 늘 바쁘게 살아가죠. 회사 일, 인간관계, 스트레스, 경쟁 속에서 마음이 답답하고 곤고해도 "괜찮겠지" 하며 그냥 넘깁니다.</p>
+        <p>그런데, 조용히 우리 안에서는 보이지 않는 변화가 일어나고 있습니다.</p>
+        <p>혈관 속에는 콜레스테롤이 서서히 쌓이고, 영혼 속에는 죄와 교만이 조금씩 켜켜이 쌓입니다.</p>
+        <p><strong>혈관이 막히면 생명이 끊어지듯, 영혼이 막히면 하나님과의 관계가 끊어집니다.</strong></p>
+        <p>의사들은 말합니다. "혈관은 조용히 막힌다."</p>
+      </div>
+
+      <div class="verse-block">
+        <span class="verse-ref">로마서 6장 23절 · Romans 6:23</span>
+        <p class="verse-text">"죄의 대가는 죽음이지만."</p>
+      </div>
+
+      <div class="vessel-card">
+        <p>우리의 육신도, 영혼도, 미처 생각지 않았던 '막힘' 속에서 서서히 죽어가고 있었던 것입니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 섹션 2: 콜레스테롤 -->
+  <div class="section" id="s2">
+    <div class="sec-wrap">
+      <div class="sec-num">02</div>
+      <span class="sec-tag">Section 02 · 필요하지만 넘치면 치명적</span>
+      <h2 class="sec-title">콜레스테롤의<br>역할과 문제</h2>
+
+      <div class="vessel-card">
+        <p>콜레스테롤은 나쁜 것만은 아닙니다. 세포막을 만들고, 호르몬과 비타민 D를 만드는 데 꼭 필요하죠.</p>
+        <p>그러나 <strong>"너무 많아지면" 그것이 문제입니다.</strong></p>
+      </div>
+
+      <div class="compare-grid">
+        <div class="cmp-item">
+          <span class="cmp-tag">육체 · Physical</span>
+          <div class="cmp-head">LDL 과다</div>
+          <p class="cmp-body">혈관 내벽에 쌓여 동맥경화, 심근경색, 뇌졸중을 유발합니다.</p>
+        </div>
+        <div class="cmp-divider">=</div>
+        <div class="cmp-item">
+          <span class="cmp-tag">영혼 · Spiritual</span>
+          <div class="cmp-head">자기의(義) 과다</div>
+          <p class="cmp-body">"나는 괜찮아, 나는 죄인이지만 그래도…세상 사람들보다 낫잖아" — 영적 LDL이 쌓여 은혜의 길이 좁아집니다.</p>
+        </div>
+      </div>
+
+      <div class="verse-block">
+        <span class="verse-ref">갈라디아서 3장 10절 · Galatians 3:10</span>
+        <p class="verse-text">"율법의 행위에 속한 사람들은 다 저주 아래 있습니다."</p>
+      </div>
+
+      <div class="verse-block">
+        <span class="verse-ref">갈라디아서 3장 24절 · Galatians 3:24</span>
+        <p class="verse-text">"그러므로 율법은 우리가 믿음으로 의롭게 되도록, 우리를 그리스도께 이끄는 어린이 인솔자가 되었습니다."</p>
+      </div>
+
+      <div class="vessel-card">
+        <p>"나는 괜찮아. 나는 최소한 저 사람들처럼은 안 해. 나는 신앙은 제대로 하고 있어" 그 말 속에는 이미 <strong>영적 LDL(자기 의)</strong>이 쌓이고 있습니다.</p>
+        <p>그 결과, 하나님의 은혜가 흘러 들어올 길이 점점 좁아집니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 섹션 3: 스타틴 + 인터랙티브 혈관 -->
+  <div class="section" id="s3">
+    <div class="sec-wrap">
+      <div class="sec-num">03</div>
+      <span class="sec-tag">Section 03 · 스타틴과 복음</span>
+      <h2 class="sec-title">스타틴의 작용 —<br>복음의 능력</h2>
+
+      <div class="vessel-card">
+        <p>스타틴은 간에서 콜레스테롤을 만드는 과정을 차단합니다. 넘쳐나는 LDL이 혈관에 쌓여 막히는 것을 방지하기 위하여 스타틴이 약효를 발휘하면 LDL의 생성을 줄여 혈관에 쌓이는 찌꺼기가 없도록 하는 것입니다.</p>
+        <p>복음도 마찬가지입니다.</p>
+        <p><strong>예수님의 십자가는 인간의 교만과 자기의(義)를 잘라냅니다.</strong> 내가 쌓아온 '의로움의 콜레스테롤'을 제거하고 오직 은혜의 피가 흐르도록 합니다.</p>
+        <p>내가 아무리 식단을 조절하고 운동을 해도 혈관 속 찌꺼기가 완전히 사라지지 않듯, 인간의 노력만으로는 죄의 막힘을 풀 수 없습니다.</p>
+      </div>
+
+      <!-- 인터랙티브 혈관 시뮬레이터 -->
+      <div id="vessel-viz">
+        <span id="vessel-viz-title">혈관 단면 시뮬레이터 · 클릭하여 복음을 적용하세요</span>
+        <div id="viz-canvas-wrap">
+          <canvas id="viz-canvas"></canvas>
+        </div>
+        <div class="viz-labels">
+          <span class="viz-label">혈관 내벽</span>
+          <span class="viz-label">LDL 축적</span>
+          <span class="viz-label">혈류</span>
+        </div>
+        <button id="statin-btn" onclick="applyStatin()">💊 스타틴(복음) 투여하기</button>
+        <div id="statin-result"></div>
+      </div>
+
+      <div class="verse-block">
+        <span class="verse-ref">갈라디아서 2장 16절 · Galatians 2:16</span>
+        <p class="verse-text">"사람이 의롭게 되는 것이 율법의 행위로써가 아니라 예수 그리스도를 믿음으로 말미암는다는 것을 알고, 우리도 그리스도 예수님을 믿었습니다."</p>
+      </div>
+
+      <div class="vessel-card">
+        <p>스타틴이 간의 합성 효소를 억제하듯, <strong>복음은 내 안의 불신과 교만의 효소를 억제하고 차단합니다.</strong></p>
+        <p>그때 비로소 영혼의 혈관에 그리스도의 생명의 피가 흐르기 시작합니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 섹션 4: 믿음 -->
+  <div class="section" id="s4">
+    <div class="sec-wrap">
+      <div class="sec-num">04</div>
+      <span class="sec-tag">Section 04 · 어떻게 믿을 수 있나요?</span>
+      <h2 class="sec-title">난 예수님을<br>믿고 싶은데<br>어떻게 믿나요?</h2>
+
+      <div class="verse-block">
+        <span class="verse-ref">로마서 10장 10절 · Romans 10:10</span>
+        <p class="verse-text">"왜냐하면 사람이 마음으로 믿어 의에 이르고, 입으로 시인하여 구원에 이르기 때문입니다."</p>
+      </div>
+
+      <div class="verse-block">
+        <span class="verse-ref">로마서 10장 13절 · Romans 10:13</span>
+        <p class="verse-text">"누구든지 주님의 이름을 부르는 사람은 구원을 받을 것입니다."</p>
+      </div>
+
+      <div class="vessel-card">
+        <p><strong>지금 이 순간 나의 영혼을 두고 주님 앞에 나와서 주님의 이름을 불러보세요.</strong> 그러면 주님은 당신에게 생명의 생수를 주실 것입니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 클로징 -->
+  <div class="section" id="s5">
+    <div class="closing-section">
+      <div class="closing-big">
+        영혼의<br>혈관을<br>여세요
+      </div>
+      <p class="closing-p">복음은 영혼의 스타틴입니다. 쌓인 자기의(義)를 제거하고 그리스도의 생명이 흐르게 합니다.</p>
+      <p class="closing-p">막힌 혈관이 열리는 순간처럼, 주님의 이름을 부를 때 영혼이 열립니다.</p>
+
+      <div class="verse-block" style="max-width:500px;margin:24px auto;">
+        <span class="verse-ref">갈라디아서 2장 16절 · Summary</span>
+        <p class="verse-text" style="text-align:center;">율법의 행위가 아닌<br>오직 그리스도를 믿음으로</p>
+      </div>
+
+      <div class="contact-box">
+        <div class="church">부산교회 2구역</div>
+        <p>신앙상담</p>
+        <div class="tel">010-9362-7642</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>막혀있는 혈관을 푸는 약 · Statin & Gospel · Romans 10:13</footer>
+
+<script>
+// ══════════════════════════════════════════════
+//  배경 혈관 캔버스 — 혈류 파티클
+// ══════════════════════════════════════════════
+const bgC   = document.getElementById('vessel-canvas');
+const bgCtx = bgC.getContext('2d');
+let BW=0, BH=0;
+
+function resizeBg(){ BW=bgC.width=innerWidth; BH=bgC.height=innerHeight; }
+resizeBg();
+window.addEventListener('resize', resizeBg);
+
+// 혈류 파티클 (붉은 혈구들)
+const cells=[];
+for(let i=0;i<60;i++){
+  cells.push({
+    x:Math.random()*2000, y:Math.random()*1000,
+    vy:(Math.random()-0.5)*0.3,
+    vx:0.4+Math.random()*0.8,
+    r:Math.random()*4+2,
+    opacity:Math.random()*0.12+0.04,
+    phase:Math.random()*Math.PI*2
+  });
+}
+
+let BT=0;
+function drawBg(){
+  bgCtx.clearRect(0,0,BW,BH);
+
+  // 어두운 혈관 배경
+  bgCtx.fillStyle='rgba(14,6,8,1)';
+  bgCtx.fillRect(0,0,BW,BH);
+
+  // 혈관 벽 (상하 테두리 곡선)
+  const wallGrad=bgCtx.createLinearGradient(0,0,0,BH);
+  wallGrad.addColorStop(0,'rgba(100,20,20,0.15)');
+  wallGrad.addColorStop(0.15,'rgba(60,10,10,0.08)');
+  wallGrad.addColorStop(0.85,'rgba(60,10,10,0.08)');
+  wallGrad.addColorStop(1,'rgba(100,20,20,0.15)');
+  bgCtx.fillStyle=wallGrad;
+  bgCtx.fillRect(0,0,BW,BH);
+
+  // 배경 혈구들
+  cells.forEach(c=>{
+    c.x += c.vx;
+    c.y += c.vy + Math.sin(BT*0.5+c.phase)*0.15;
+    if(c.x>BW+20) c.x=-20;
+    if(c.y<0) c.y=BH;
+    if(c.y>BH) c.y=0;
+
+    bgCtx.beginPath();
+    bgCtx.ellipse(c.x,c.y,c.r*2,c.r,0,0,Math.PI*2);
+    bgCtx.fillStyle=`rgba(200,40,40,${c.opacity})`;
+    bgCtx.fill();
+  });
+
+  BT+=0.016;
+  requestAnimationFrame(drawBg);
+}
+drawBg();
+
+// ══════════════════════════════════════════════
+//  혈관 시뮬레이터 캔버스
+// ══════════════════════════════════════════════
+const vizC   = document.getElementById('viz-canvas');
+const vizCtx = vizC.getContext('2d');
+let VW=0, VH=180;
+let blockage = 0.72;    // 막힘 정도 0=완전개방 1=완전막힘
+let targetBlockage = 0.72;
+let statinApplied = false;
+let flowParticles=[];
+
+function resizeViz(){
+  VW = vizC.width  = vizC.offsetWidth;
+  VH = vizC.height = 180;
+  initFlowParticles();
+}
+
+function initFlowParticles(){
+  flowParticles=[];
+  for(let i=0;i<40;i++){
+    flowParticles.push({
+      x:Math.random()*VW,
+      y:VH/2+(Math.random()-0.5)*20,
+      vx:1.5+Math.random()*2,
+      r:Math.random()*3+1.5,
+      opacity:Math.random()*0.7+0.3,
+      phase:Math.random()*Math.PI*2
+    });
+  }
+}
+
+let VT=0;
+function drawViz(){
+  if(!VW) return;
+  vizCtx.clearRect(0,0,VW,VH);
+
+  const cx = VW/2;
+  const wallTop    = VH*0.08;
+  const wallBottom = VH*0.92;
+  const openRadius = (wallBottom-wallTop)/2 * (1-blockage*0.72);
+  const centerY    = VH/2;
+
+  // 혈관 외벽
+  const outerGrad = vizCtx.createLinearGradient(0,wallTop,0,wallBottom);
+  outerGrad.addColorStop(0,  statinApplied?'rgba(40,100,60,0.9)':'rgba(80,15,15,0.9)');
+  outerGrad.addColorStop(0.3,statinApplied?'rgba(20,60,35,0.95)':'rgba(50,10,10,0.95)');
+  outerGrad.addColorStop(0.7,statinApplied?'rgba(20,60,35,0.95)':'rgba(50,10,10,0.95)');
+  outerGrad.addColorStop(1,  statinApplied?'rgba(40,100,60,0.9)':'rgba(80,15,15,0.9)');
+  vizCtx.fillStyle=outerGrad;
+  vizCtx.fillRect(0,wallTop,VW,wallBottom-wallTop);
+
+  // LDL 콜레스테롤 층
+  if(blockage>0.05){
+    const ldlH = (wallBottom-wallTop)/2 * blockage * 0.72;
+    // 상단 LDL
+    const ldlTopGrad = vizCtx.createLinearGradient(0,wallTop,0,wallTop+ldlH);
+    ldlTopGrad.addColorStop(0, statinApplied?'rgba(20,60,35,0.8)':'rgba(180,100,20,0.8)');
+    ldlTopGrad.addColorStop(1, statinApplied?'rgba(15,80,40,0.3)':'rgba(220,140,30,0.3)');
+    vizCtx.fillStyle=ldlTopGrad;
+    vizCtx.fillRect(0,wallTop,VW,ldlH);
+
+    // 하단 LDL
+    const ldlBotGrad = vizCtx.createLinearGradient(0,wallBottom-ldlH,0,wallBottom);
+    ldlBotGrad.addColorStop(0, statinApplied?'rgba(15,80,40,0.3)':'rgba(220,140,30,0.3)');
+    ldlBotGrad.addColorStop(1, statinApplied?'rgba(20,60,35,0.8)':'rgba(180,100,20,0.8)');
+    vizCtx.fillStyle=ldlBotGrad;
+    vizCtx.fillRect(0,wallBottom-ldlH,VW,ldlH);
+
+    // LDL 텍스트
+    if(blockage>0.2){
+      vizCtx.font=`bold ${Math.floor(ldlH*0.4+8)}px Bebas Neue,sans-serif`;
+      vizCtx.fillStyle=statinApplied?'rgba(100,200,120,0.5)':'rgba(255,180,40,0.5)';
+      vizCtx.textAlign='center';
+      const txt = statinApplied ? 'CLEARED' : 'LDL';
+      vizCtx.fillText(txt, VW/2, wallTop+ldlH*0.65);
+    }
+  }
+
+  // 혈류 통로
+  const flowGrad = vizCtx.createLinearGradient(0,centerY-openRadius,0,centerY+openRadius);
+  flowGrad.addColorStop(0,'rgba(180,20,20,0.4)');
+  flowGrad.addColorStop(0.5,statinApplied?'rgba(40,160,80,0.35)':'rgba(220,30,30,0.35)');
+  flowGrad.addColorStop(1,'rgba(180,20,20,0.4)');
+  vizCtx.fillStyle=flowGrad;
+  vizCtx.fillRect(0,centerY-openRadius,VW,openRadius*2);
+
+  // 혈류 파티클
+  if(openRadius>8){
+    flowParticles.forEach(p=>{
+      const speedMult = statinApplied ? 2.5 : (1-blockage*0.6);
+      p.x += p.vx * speedMult;
+      if(p.x>VW+10) p.x=-10;
+
+      // 통로 안에 클램프
+      const maxY = centerY+openRadius*0.7;
+      const minY = centerY-openRadius*0.7;
+      p.y = Math.max(minY, Math.min(maxY,
+        centerY+(p.y-centerY)*0.95+Math.sin(VT*2+p.phase)*1.5
+      ));
+
+      vizCtx.beginPath();
+      vizCtx.ellipse(p.x,p.y,p.r*1.6,p.r,0,0,Math.PI*2);
+      vizCtx.fillStyle=statinApplied
+        ?`rgba(80,220,120,${p.opacity*0.8})`
+        :`rgba(220,40,40,${p.opacity})`;
+      vizCtx.fill();
+    });
+  } else {
+    // 완전 막힘 경고
+    vizCtx.font='bold 14px Noto Sans KR,sans-serif';
+    vizCtx.fillStyle='rgba(255,80,80,0.7)';
+    vizCtx.textAlign='center';
+    vizCtx.fillText('혈류 차단', VW/2, centerY+6);
+  }
+
+  // 퍼센트 표시
+  const openPct = Math.round((1-blockage)*100);
+  vizCtx.font='10px Special Elite,serif';
+  vizCtx.fillStyle='rgba(200,150,150,0.4)';
+  vizCtx.textAlign='left';
+  vizCtx.fillText(`개통률 ${openPct}%`, 12, VH-10);
+
+  blockage += (targetBlockage-blockage)*0.03;
+  VT+=0.016;
+  requestAnimationFrame(drawViz);
+}
+
+function applyStatin(){
+  if(statinApplied) return;
+  statinApplied=true;
+  targetBlockage=0;
+  document.getElementById('statin-btn').disabled=true;
+  document.getElementById('statin-btn').textContent='✓ 복음 적용됨';
+
+  setTimeout(()=>{
+    const res=document.getElementById('statin-result');
+    res.innerHTML='그리스도의 생명의 피가 흐르기 시작합니다.<br>영혼의 혈관이 열렸습니다. 🩸→💚';
+    res.classList.add('show');
+  },2000);
+}
+
+// 리사이즈 옵저버
+const ro=new ResizeObserver(resizeViz);
+ro.observe(document.getElementById('viz-canvas-wrap'));
+setTimeout(resizeViz,100);
+drawViz();
+
+// ══════════════════════════════════════════════
+//  IntersectionObserver
+// ══════════════════════════════════════════════
+const secs=document.querySelectorAll('.section');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting) e.target.classList.add('vis');});
+},{threshold:0.06});
+secs.forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

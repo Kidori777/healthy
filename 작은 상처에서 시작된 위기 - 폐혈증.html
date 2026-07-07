@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>작은 상처에서 시작된 위기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Source+Code+Pro:wght@300;400;600&family=Noto+Serif+KR:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-style:normal !important; }
+html { scroll-behavior: smooth; }
+
+:root {
+  --bg:       #07070F;
+  --amber:    #F5A500;
+  --amber-dim:rgba(245,165,0,0.15);
+  --red:      #E83030;
+  --red-dim:  rgba(232,48,48,0.12);
+  --green:    #28C87A;
+  --text:     #EDE8DC;
+  --dim:      rgba(237,232,220,0.5);
+  --panel-w:  220px;
+  --playfair: 'Playfair Display', serif;
+  --mono:     'Source Code Pro', monospace;
+  --serif:    'Noto Serif KR', serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--serif);
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar { width: 2px; }
+::-webkit-scrollbar-thumb { background: rgba(245,165,0,0.25); border-radius: 2px; }
+
+/* ══════════════════════════════
+   LEFT FIXED PANEL — DISPATCH LOG
+══════════════════════════════ */
+#dispatch {
+  position: fixed;
+  top: 0; left: 0;
+  width: var(--panel-w);
+  height: 100vh;
+  background: #040409;
+  border-right: 1px solid rgba(245,165,0,0.15);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 22px;
+  overflow: hidden;
+}
+
+.disp-header {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.35em;
+  color: rgba(245,165,0,0.4);
+  margin-bottom: 18px;
+  line-height: 2;
+  border-bottom: 1px solid rgba(245,165,0,0.1);
+  padding-bottom: 14px;
+}
+
+/* Elapsed timer */
+.elapsed-wrap {
+  text-align: center;
+  margin-bottom: 22px;
+  padding: 16px 0;
+  border: 1px solid rgba(245,165,0,0.15);
+  position: relative;
+}
+.elapsed-label {
+  font-family: var(--mono);
+  font-size: 7px;
+  letter-spacing: 0.3em;
+  color: rgba(245,165,0,0.45);
+  display: block;
+  margin-bottom: 6px;
+}
+.elapsed-num {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--amber);
+  text-shadow: 0 0 20px rgba(245,165,0,0.5);
+  display: block;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.elapsed-sub {
+  font-family: var(--mono);
+  font-size: 7px;
+  letter-spacing: 0.2em;
+  color: rgba(245,165,0,0.3);
+  display: block;
+  margin-top: 5px;
+}
+
+/* Status indicator */
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  transition: border-color 0.5s ease, background 0.5s ease;
+}
+.status-row.active {
+  border-color: rgba(245,165,0,0.25);
+  background: rgba(245,165,0,0.04);
+}
+.status-row.critical {
+  border-color: rgba(232,48,48,0.3);
+  background: rgba(232,48,48,0.05);
+  animation: rowBlink 1.2s ease-in-out infinite;
+}
+.status-row.resolved {
+  border-color: rgba(40,200,122,0.25);
+  background: rgba(40,200,122,0.04);
+}
+@keyframes rowBlink { 0%,100%{opacity:1} 50%{opacity:0.55} }
+
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: rgba(245,165,0,0.2);
+  transition: background 0.5s ease, box-shadow 0.5s ease;
+}
+.status-row.active .status-dot {
+  background: var(--amber);
+  box-shadow: 0 0 6px var(--amber);
+}
+.status-row.critical .status-dot {
+  background: var(--red);
+  box-shadow: 0 0 6px var(--red);
+}
+.status-row.resolved .status-dot {
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+.status-text {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  color: rgba(237,232,220,0.35);
+  transition: color 0.5s ease;
+  line-height: 1.4;
+}
+.status-row.active   .status-text { color: rgba(245,165,0,0.7); }
+.status-row.critical .status-text { color: rgba(232,48,48,0.8); }
+.status-row.resolved .status-text { color: rgba(40,200,122,0.7); }
+
+/* Panel scroll progress */
+.panel-progress {
+  margin-top: auto;
+  height: 3px;
+  background: rgba(245,165,0,0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.panel-progress-fill {
+  height: 100%;
+  background: var(--amber);
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.2s ease;
+  box-shadow: 0 0 8px rgba(245,165,0,0.5);
+}
+
+/* ══════════════════════════════
+   MAIN
+══════════════════════════════ */
+.main {
+  margin-left: var(--panel-w);
+  position: relative;
+}
+
+/* ══════════════════════════════
+   HERO
+══════════════════════════════ */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: clamp(44px,8vw,100px);
+  padding-bottom: clamp(80px,12vh,130px);
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(245,165,0,0.1);
+}
+
+/* Amber hazard stripes at bottom edge */
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 4px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--amber) 0px,
+    var(--amber) 20px,
+    transparent 20px,
+    transparent 36px
+  );
+  opacity: 0.35;
+}
+
+.hero-case {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.4em;
+  color: rgba(245,165,0,0.45);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.hero-case::before {
+  content: '';
+  width: 26px; height: 1px;
+  background: rgba(245,165,0,0.4);
+  display: block;
+}
+
+h1.hero-h1 {
+  font-family: var(--playfair);
+  font-weight: 900;
+  font-size: clamp(44px, 7.5vw, 108px);
+  line-height: 1.0;
+  color: var(--text);
+  max-width: 700px;
+  letter-spacing: -0.01em;
+}
+h1.hero-h1 .wound {
+  display: block;
+  color: var(--amber);
+  text-shadow: 0 0 50px rgba(245,165,0,0.4);
+}
+
+.hero-sub {
+  display: block;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(13px,1.7vw,17px);
+  color: var(--dim);
+  margin-top: 22px;
+  letter-spacing: 0.03em;
+  line-height: 1.8;
+}
+
+/* Wound marker — decorative */
+.wound-mark {
+  position: absolute;
+  top: clamp(44px,8vw,100px);
+  right: clamp(44px,8vw,100px);
+  width: clamp(100px,12vw,150px);
+  height: clamp(100px,12vw,150px);
+  border: 1px solid rgba(232,48,48,0.25);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+}
+.wound-mark::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(232,48,48,0.12);
+}
+.wound-mark span {
+  font-family: var(--mono);
+  font-size: clamp(9px,1vw,11px);
+  letter-spacing: 0.25em;
+  color: rgba(232,48,48,0.45);
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ══════════════════════════════
+   CHAPTER BLOCKS
+══════════════════════════════ */
+.chapter {
+  padding: clamp(55px,7vh,90px) clamp(44px,8vw,100px);
+  border-bottom: 1px solid rgba(245,165,0,0.08);
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.75s ease, transform 0.75s ease;
+  position: relative;
+}
+.chapter.in { opacity:1; transform:translateY(0); }
+
+.ch-num {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.38em;
+  color: rgba(245,165,0,0.35);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ch-num::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(245,165,0,0.12);
+  max-width: 60px;
+}
+
+.ch-title {
+  font-family: var(--playfair);
+  font-weight: 700;
+  font-size: clamp(22px,3.5vw,44px);
+  line-height: 1.25;
+  color: var(--text);
+  margin-bottom: 26px;
+  letter-spacing: -0.01em;
+}
+.ch-title .accent { color: var(--amber); }
+
+.prose {
+  font-size: clamp(15px,1.85vw,18px);
+  line-height: 2.05;
+  color: rgba(237,232,220,0.88);
+  font-weight: 400;
+  max-width: 600px;
+  margin-bottom: 1.2em;
+}
+.prose:last-child { margin-bottom: 0; }
+
+.thought-box {
+  margin: 24px 0;
+  padding: 18px 24px;
+  border-left: 2px solid rgba(245,165,0,0.3);
+  background: rgba(245,165,0,0.04);
+}
+.thought-box p {
+  font-family: var(--playfair);
+  font-weight: 600;
+  font-size: clamp(15px,2vw,20px);
+  line-height: 1.7;
+  color: rgba(245,165,0,0.85);
+}
+
+/* ══════════════════════════════
+   VITAL SIGN CARDS (4 symptoms)
+══════════════════════════════ */
+.vitals-zone {
+  padding: clamp(55px,7vh,90px) clamp(44px,8vw,100px);
+  border-bottom: 1px solid rgba(245,165,0,0.08);
+}
+
+.vitals-title {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.4em;
+  color: rgba(245,165,0,0.4);
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.vitals-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(245,165,0,0.12);
+  max-width: 80px;
+}
+
+.vital-card {
+  display: grid;
+  grid-template-columns: 4px 1fr;
+  gap: 0 24px;
+  margin-bottom: 36px;
+  opacity: 0;
+  transform: translateX(-16px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+.vital-card.in { opacity:1; transform:translateX(0); }
+.vital-card:nth-child(2) { transition-delay: 0.1s; }
+.vital-card:nth-child(3) { transition-delay: 0.2s; }
+.vital-card:nth-child(4) { transition-delay: 0.3s; }
+.vital-card:nth-child(5) { transition-delay: 0.4s; }
+
+.vital-stripe {
+  background: var(--amber);
+  border-radius: 2px;
+  box-shadow: 0 0 12px rgba(245,165,0,0.4);
+}
+
+.vital-body {}
+
+.vital-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.vital-badge {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.28em;
+  color: rgba(245,165,0,0.55);
+  border: 1px solid rgba(245,165,0,0.2);
+  padding: 3px 10px;
+  border-radius: 1px;
+}
+.vital-name {
+  font-family: var(--playfair);
+  font-weight: 700;
+  font-size: clamp(17px,2.3vw,26px);
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.vital-prose {
+  font-size: clamp(14px,1.7vw,17px);
+  line-height: 1.95;
+  color: rgba(237,232,220,0.78);
+  font-weight: 400;
+  margin-bottom: 0.8em;
+  max-width: 560px;
+}
+
+/* Threshold bar */
+.threshold-wrap {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.threshold-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 2px;
+  position: relative;
+  max-width: 280px;
+}
+.threshold-normal {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: rgba(40,200,122,0.5);
+  border-radius: 2px;
+  width: 60%;
+}
+.threshold-danger {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  background: rgba(232,48,48,0.6);
+  border-radius: 2px;
+  width: 40%;
+}
+.threshold-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: rgba(237,232,220,0.35);
+}
+.threshold-label span { color: var(--red); }
+
+/* ══════════════════════════════
+   TIME CRITICAL BANNER
+══════════════════════════════ */
+.time-banner {
+  background: #0F0800;
+  border-top: 2px solid rgba(245,165,0,0.4);
+  border-bottom: 2px solid rgba(245,165,0,0.4);
+  padding: clamp(50px,7vh,90px) clamp(44px,8vw,100px);
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.85s ease, transform 0.85s ease;
+}
+.time-banner.in { opacity:1; transform:translateY(0); }
+
+/* Hazard stripe overlay */
+.time-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(245,165,0,0.02) 0px,
+    rgba(245,165,0,0.02) 12px,
+    transparent 12px,
+    transparent 24px
+  );
+  pointer-events: none;
+}
+
+.time-heading {
+  font-family: var(--playfair);
+  font-weight: 900;
+  font-size: clamp(30px,5.5vw,76px);
+  line-height: 1.1;
+  color: var(--amber);
+  text-shadow: 0 0 40px rgba(245,165,0,0.35);
+  position: relative;
+  margin-bottom: 22px;
+}
+
+.time-prose {
+  font-size: clamp(15px,1.85vw,18px);
+  line-height: 2.05;
+  color: rgba(245,210,140,0.82);
+  font-weight: 400;
+  max-width: 580px;
+  margin-bottom: 1.2em;
+  position: relative;
+}
+.time-prose.em { color: var(--amber); font-weight: 600; }
+
+/* ══════════════════════════════
+   TREATMENT ZONE
+══════════════════════════════ */
+.treatment-zone {
+  padding: clamp(55px,7vh,90px) clamp(44px,8vw,100px);
+  border-bottom: 1px solid rgba(245,165,0,0.08);
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.treatment-zone.in { opacity:1; transform:translateY(0); }
+
+.treat-list {
+  margin: 22px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 540px;
+}
+.treat-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1px solid rgba(245,165,0,0.12);
+  background: rgba(245,165,0,0.03);
+}
+.treat-icon {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: rgba(245,165,0,0.6);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.treat-text {
+  font-size: clamp(14px,1.7vw,17px);
+  line-height: 1.9;
+  color: rgba(237,232,220,0.8);
+  font-weight: 400;
+}
+
+/* ══════════════════════════════
+   SPIRITUAL ZONE
+══════════════════════════════ */
+.spirit {
+  padding: clamp(55px,7vh,90px) clamp(44px,8vw,100px);
+  border-bottom: 1px solid rgba(245,165,0,0.08);
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.spirit.in { opacity:1; transform:translateY(0); }
+
+.spirit-tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.38em;
+  color: rgba(245,165,0,0.4);
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.spirit-tag::before { content:''; width:18px; height:1px; background:rgba(245,165,0,0.35); display:block; }
+
+.spirit-prose {
+  font-size: clamp(15px,1.85vw,18px);
+  line-height: 2.1;
+  color: rgba(237,232,220,0.88);
+  font-weight: 400;
+  max-width: 620px;
+  margin-bottom: 1.2em;
+}
+.spirit-prose:last-child { margin-bottom: 0; }
+
+.sin-small {
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 300px;
+}
+.sin-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: clamp(14px,1.8vw,17px);
+  color: rgba(245,165,0,0.7);
+  font-weight: 400;
+}
+.sin-row::before {
+  content: '';
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: rgba(245,165,0,0.5);
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════
+   SCRIPTURE
+══════════════════════════════ */
+.scripture {
+  margin: 8px clamp(44px,8vw,100px);
+  padding: 26px 32px;
+  border-left: 2px solid;
+  opacity: 0;
+  transform: translateX(-16px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.scripture.in { opacity:1; transform:translateX(0); }
+.scripture.amber {
+  border-color: var(--amber);
+  background: rgba(245,165,0,0.04);
+}
+.scripture.gold {
+  border-color: #D4AA40;
+  background: rgba(212,170,64,0.05);
+}
+.scripture.green {
+  border-color: var(--green);
+  background: rgba(40,200,122,0.04);
+}
+.scr-ref {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.3em;
+  display: block;
+  margin-bottom: 12px;
+}
+.scripture.amber .scr-ref { color: rgba(245,165,0,0.5); }
+.scripture.gold  .scr-ref { color: rgba(212,170,64,0.55); }
+.scripture.green .scr-ref { color: rgba(40,200,122,0.55); }
+.scripture p {
+  font-family: var(--playfair);
+  font-size: clamp(15px,2vw,20px);
+  line-height: 1.85;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* ══════════════════════════════
+   JESUS ZONE
+══════════════════════════════ */
+.jesus-zone {
+  min-height: 65vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(70px,10vh,130px) clamp(44px,8vw,100px);
+  background: #050E08;
+  border-top: 1px solid rgba(40,200,122,0.15);
+  border-bottom: 1px solid rgba(40,200,122,0.15);
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: scale(0.97);
+  transition: opacity 1s ease, transform 1s ease;
+}
+.jesus-zone.in { opacity:1; transform:scale(1); }
+.jesus-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 50% at 50% 50%,
+    rgba(40,200,122,0.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.jesus-name {
+  display: block;
+  font-family: var(--playfair);
+  font-weight: 900;
+  font-size: clamp(40px,7vw,100px);
+  letter-spacing: 0.06em;
+  color: var(--green);
+  text-shadow: 0 0 80px rgba(40,200,122,0.5);
+  line-height: 1.1;
+  margin-bottom: 14px;
+  position: relative;
+}
+.jesus-sub {
+  display: block;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.32em;
+  color: rgba(40,200,122,0.4);
+  margin-bottom: 36px;
+  position: relative;
+}
+
+/* ══════════════════════════════
+   CLOSING
+══════════════════════════════ */
+.closing {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  padding: clamp(70px,10vw,140px);
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 1s ease 0.1s, transform 1s ease 0.1s;
+}
+.closing::before {
+  content: 'LIFE';
+  position: absolute;
+  right: -0.04em; bottom: -0.1em;
+  font-family: var(--playfair);
+  font-weight: 900;
+  font-size: clamp(140px,22vw,340px);
+  color: rgba(40,200,122,0.03);
+  line-height: 1;
+  pointer-events:none;
+}
+.closing.in { opacity:1; transform:translateY(0); }
+.closing p {
+  font-size: clamp(17px,2.3vw,24px);
+  line-height: 2.2;
+  color: rgba(237,232,220,0.88);
+  font-weight: 400;
+  max-width: 640px;
+  margin-bottom: 1em;
+  position: relative;
+}
+.closing p.em { color: var(--green); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- ── DISPATCH PANEL ── -->
+<div id="dispatch">
+  <div class="disp-header">
+    SEPSIS ALERT<br>
+    EMERGENCY DISPATCH<br>
+    패혈증 긴급 경보
+  </div>
+
+  <div class="elapsed-wrap">
+    <span class="elapsed-label">경과 시간 / ELAPSED</span>
+    <span class="elapsed-num" id="elapsed">00:00</span>
+    <span class="elapsed-sub">패혈증은 시간을 다툽니다</span>
+  </div>
+
+  <div class="status-row" id="sr-wound">
+    <div class="status-dot"></div>
+    <div class="status-text">작은 상처<br>WOUND</div>
+  </div>
+  <div class="status-row" id="sr-fever">
+    <div class="status-dot"></div>
+    <div class="status-text">열 / 오한<br>FEVER</div>
+  </div>
+  <div class="status-row" id="sr-breath">
+    <div class="status-dot"></div>
+    <div class="status-text">호흡 이상<br>BREATHING</div>
+  </div>
+  <div class="status-row" id="sr-heart">
+    <div class="status-dot"></div>
+    <div class="status-text">심박 이상<br>HEART RATE</div>
+  </div>
+  <div class="status-row" id="sr-mind">
+    <div class="status-dot"></div>
+    <div class="status-text">정신 혼란<br>CONFUSION</div>
+  </div>
+  <div class="status-row" id="sr-jesus">
+    <div class="status-dot"></div>
+    <div class="status-text">예수 그리스도<br>LIFE</div>
+  </div>
+
+  <div class="panel-progress">
+    <div class="panel-progress-fill" id="progFill"></div>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wound-mark">
+    <span>작은<br>상처<br>WOUND</span>
+  </div>
+  <div class="hero-case">CASE REPORT · 패혈증(Sepsis) · EMERGENCY</div>
+  <h1 class="hero-h1">
+    작은 상처에서<br>
+    <span class="wound">시작된 위기</span>
+  </h1>
+  <span class="hero-sub">― 패혈증(Sepsis)이 우리에게 말해 주는 것</span>
+</section>
+
+<!-- 1. 시작은 작은 상처 -->
+<div class="chapter" id="ch1">
+  <div class="ch-num">CHAPTER 01 · 시작</div>
+  <div class="ch-title">시작은 아주 <span class="accent">작은 상처</span>였습니다</div>
+  <p class="prose">어느 사람이 부엌에서 요리를 하다가 손가락을 살짝 베었습니다.</p>
+  <p class="prose">피가 조금 났지만 대수롭지 않게 생각했습니다.</p>
+  <div class="thought-box">
+    <p>"이 정도 상처는 며칠 지나면 낫겠지."</p>
+  </div>
+  <p class="prose">실제로 대부분의 상처는 우리 몸의 면역 시스템이 처리합니다.</p>
+  <p class="prose">하지만 어떤 경우에는 그 작은 상처를 통해 세균이 몸속으로 들어가 혈액을 따라 온몸으로 퍼질 수 있습니다.</p>
+  <p class="prose">이것을 패혈증(Sepsis)이라고 합니다.</p>
+  <p class="prose">패혈증은 단순한 상처 감염이 아니라 온몸의 장기가 영향을 받는 전신 질환입니다.</p>
+</div>
+
+<!-- 2. 사람들의 생각 -->
+<div class="chapter" id="ch2">
+  <div class="ch-num">CHAPTER 02 · 방심</div>
+  <div class="ch-title">사람들은 보통 이렇게 생각합니다</div>
+  <div class="thought-box">
+    <p>"전에 이런 상처는 그냥 나았는데…"</p>
+  </div>
+  <p class="prose">그래서 많은 사람들이 패혈증의 초기 신호를 놓칩니다.</p>
+  <p class="prose">패혈증의 위험한 점은 상처보다 전신 증상이 먼저 나타나는 경우가 많다는 것입니다.</p>
+</div>
+
+<!-- 3. 초기 신호들 (Vital Cards) -->
+<div class="vitals-zone" id="ch3">
+  <div class="vitals-title">CHAPTER 03 · 패혈증의 초기 신호들 · VITAL SIGNS</div>
+
+  <div class="vital-card" id="vc1">
+    <div class="vital-stripe"></div>
+    <div class="vital-body">
+      <div class="vital-header">
+        <div class="vital-badge">SIGN ①</div>
+        <div class="vital-name">갑작스러운 열과 오한</div>
+      </div>
+      <p class="vital-prose">몸이 세균과 싸우기 시작하면</p>
+      <p class="vital-prose">38도 이상의 열, 몸이 떨리는 심한 오한이 나타날 수 있습니다.</p>
+      <p class="vital-prose">하지만 어떤 사람에게는 오히려 체온이 떨어지기도 합니다.</p>
+    </div>
+  </div>
+
+  <div class="vital-card" id="vc2">
+    <div class="vital-stripe"></div>
+    <div class="vital-body">
+      <div class="vital-header">
+        <div class="vital-badge">SIGN ②</div>
+        <div class="vital-name">숨이 평소보다 빨라짐</div>
+      </div>
+      <p class="vital-prose">패혈증이 시작되면 몸은 더 많은 산소를 필요로 합니다. 그래서 숨이 빨라집니다.</p>
+      <div class="threshold-wrap">
+        <div class="threshold-track">
+          <div class="threshold-normal"></div>
+          <div class="threshold-danger"></div>
+        </div>
+        <div class="threshold-label">
+          정상 12~20회 → <span>위험 22회↑</span>
+        </div>
+      </div>
+      <p class="vital-prose" style="margin-top:14px;">정상 성인 호흡수 1분에 12~20번. 1분에 22번 이상이면 의사들은 위험 신호로 봅니다.</p>
+    </div>
+  </div>
+
+  <div class="vital-card" id="vc3">
+    <div class="vital-stripe"></div>
+    <div class="vital-body">
+      <div class="vital-header">
+        <div class="vital-badge">SIGN ③</div>
+        <div class="vital-name">심장이 빨리 뛰기 시작함</div>
+      </div>
+      <p class="vital-prose">몸이 감염과 싸우기 위해 혈액을 더 빨리 순환시키려고 합니다.</p>
+      <p class="vital-prose">그래서 심장이 빨리 뛰고 맥박이 빨라집니다.</p>
+    </div>
+  </div>
+
+  <div class="vital-card" id="vc4">
+    <div class="vital-stripe"></div>
+    <div class="vital-body">
+      <div class="vital-header">
+        <div class="vital-badge">SIGN ④</div>
+        <div class="vital-name">정신이 멍해지거나 혼란이 생김</div>
+      </div>
+      <p class="vital-prose">패혈증이 진행되면 뇌로 가는 혈액이 부족해질 수 있습니다.</p>
+      <p class="vital-prose">그래서 멍해짐, 혼란, 말이 느려짐 같은 증상이 나타날 수 있습니다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 4. 시간을 다투는 병 -->
+<div class="time-banner" id="ch4">
+  <div class="time-heading">"패혈증은<br>시간을 다투는 병이다."</div>
+  <p class="time-prose">의료 현장에는 이런 말이 있습니다.</p>
+  <p class="time-prose em">치료가 몇 시간만 늦어도 생명이 위험해질 수 있기 때문입니다.</p>
+  <p class="time-prose">그래서 이런 증상이 함께 나타나면 즉시 병원으로 가야 합니다.</p>
+</div>
+
+<!-- 5. 치료 원칙 -->
+<div class="treatment-zone" id="ch5">
+  <div class="ch-num">CHAPTER 05 · 치료</div>
+  <div class="ch-title">의학에서 가장 중요한 <span class="accent">치료 원칙</span></div>
+  <p class="prose">패혈증 치료의 핵심은 원인을 제거하는 것입니다.</p>
+  <div class="treat-list">
+    <div class="treat-item">
+      <div class="treat-icon">Rx01</div>
+      <div class="treat-text">항생제로 세균을 죽이고</div>
+    </div>
+    <div class="treat-item">
+      <div class="treat-icon">Rx02</div>
+      <div class="treat-text">수액으로 혈압을 유지하고</div>
+    </div>
+    <div class="treat-item">
+      <div class="treat-icon">Rx03</div>
+      <div class="treat-text">감염된 부위를 수술이나 배농으로 제거합니다</div>
+    </div>
+  </div>
+  <p class="prose">왜냐하면 문제의 근원을 제거하지 않으면 병은 계속 퍼지기 때문입니다.</p>
+</div>
+
+<!-- 6. 우리의 삶 -->
+<div class="spirit" id="sp1">
+  <div class="spirit-tag">CHAPTER 06 · SPIRITUAL PARALLEL · 영적 병행</div>
+  <p class="spirit-prose">성경은 인간의 문제도 이와 비슷하다고 말합니다.</p>
+  <p class="spirit-prose">죄는 처음에는 아주 작아 보입니다.</p>
+  <div class="sin-small">
+    <div class="sin-row">작은 거짓말</div>
+    <div class="sin-row">작은 미움</div>
+    <div class="sin-row">작은 욕심</div>
+  </div>
+  <p class="spirit-prose">하지만 그것이 마음 속에서 자라면 삶 전체를 병들게 합니다. 성경은 이렇게 말합니다.</p>
+</div>
+
+<div class="scripture amber" id="scr1">
+  <span class="scr-ref">예레미야 17장 9절</span>
+  <p>"만물보다 더 거짓되고 치유될 수 없는 것이 마음이니 누가 그것을 알 수 있으랴?"</p>
+</div>
+
+<div class="spirit" id="sp2">
+  <p class="spirit-prose">문제의 시작은 겉이 아니라 우리 마음입니다.</p>
+</div>
+
+<!-- 7. 하나님이 준비하신 치료 -->
+<div class="spirit" id="sp3">
+  <div class="spirit-tag">CHAPTER 07 · 하나님이 준비하신 치료</div>
+  <p class="spirit-prose">패혈증에서 가장 중요한 치료가 근본 원인 제거라면 우리 인생의 문제에서도 하나님은 근본적인 해결을 준비하셨습니다.</p>
+  <p class="spirit-prose">성경은 말합니다.</p>
+</div>
+
+<div class="scripture gold" id="scr2">
+  <span class="scr-ref">요한복음 3장 16절</span>
+  <p>"하나님께서 세상을 이처럼 사랑하시어 독생자를 주셨습니다. 이것은 그분을 믿는 사람마다 멸망하지 않고 영원한 생명을 얻도록 하려는 것입니다."</p>
+</div>
+
+<div class="spirit" id="sp4">
+  <p class="spirit-prose">예수 그리스도는 우리의 죄 문제를 해결하시기 위해 십자가에서 죽으셨습니다.</p>
+</div>
+
+<!-- 8. 생명의 길 -->
+<div class="jesus-zone" id="b-jesus">
+  <span class="jesus-name">예수 그리스도</span>
+  <span class="jesus-sub">JESUS CHRIST · 생명의 길 · THE WAY OF LIFE</span>
+  <p class="spirit-prose" style="max-width:620px; position:relative;">성경은 이렇게 기록되어 말씀하고 계십니다.</p>
+</div>
+
+<div class="scripture green" id="scr3">
+  <span class="scr-ref">디모데후서 1장 10절</span>
+  <p>"이제는 우리 구주 그리스도 예수님께서 오심으로 말미암아 밝히 드러났습니다. 그분은 죽음을 무효화하시고 복음을 통하여 생명과 썩지 않을 것을 밝히셨습니다."</p>
+</div>
+
+<!-- CLOSING -->
+<div class="closing" id="b-closing">
+  <div>
+    <p>작은 상처 하나가 생명을 위협할 수 있는 것처럼 작은 죄도 우리 삶을 병들게 할 수 있습니다.</p>
+    <p>그러나 하나님은 우리에게 생명의 길을 보여 주셨습니다.</p>
+    <p class="em">그 길은 바로 예수 그리스도입니다.</p>
+  </div>
+</div>
+
+</div><!-- .main -->
+
+<script>
+/* ─── ELAPSED TIMER ─────────────────── */
+const t0 = Date.now();
+function updateElapsed() {
+  const s = Math.floor((Date.now() - t0) / 1000);
+  const mm = String(Math.floor(s / 60)).padStart(2,'0');
+  const ss = String(s % 60).padStart(2,'0');
+  document.getElementById('elapsed').textContent = mm + ':' + ss;
+}
+setInterval(updateElapsed, 1000);
+updateElapsed();
+
+/* ─── SCROLL PROGRESS + STATUS ─────── */
+function getProgress() {
+  return window.scrollY / Math.max(1,
+    document.documentElement.scrollHeight - window.innerHeight);
+}
+
+const statusMap = [
+  { id:'sr-wound',  sectId:'ch1',    state:'active'   },
+  { id:'sr-fever',  sectId:'vc1',    state:'critical' },
+  { id:'sr-breath', sectId:'vc2',    state:'critical' },
+  { id:'sr-heart',  sectId:'vc3',    state:'critical' },
+  { id:'sr-mind',   sectId:'vc4',    state:'critical' },
+  { id:'sr-jesus',  sectId:'b-jesus',state:'resolved' },
+];
+
+function updateStatus() {
+  const vh = window.innerHeight;
+  const sp = getProgress();
+
+  document.getElementById('progFill').style.width = (sp * 100) + '%';
+
+  statusMap.forEach(item => {
+    const sect = document.getElementById(item.sectId);
+    if (!sect) return;
+    const rect = sect.getBoundingClientRect();
+    const visible = rect.top < vh * 0.7 && rect.bottom > 0;
+    const row = document.getElementById(item.id);
+    if (!row) return;
+    row.className = 'status-row' + (visible ? ' ' + item.state : '');
+  });
+}
+
+window.addEventListener('scroll', updateStatus, { passive:true });
+updateStatus();
+
+/* ─── INTERSECTION OBSERVER ─────────── */
+document.querySelectorAll(
+  '.chapter,.vitals-zone,.vital-card,.time-banner,.treatment-zone,.spirit,.scripture,.jesus-zone,.closing'
+).forEach(el => {
+  new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); }),
+    { threshold:0.06, rootMargin:'0px 0px -44px 0px' }
+  ).observe(el);
+});
+</script>
+</body>
+</html>

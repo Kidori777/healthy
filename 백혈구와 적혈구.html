@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>핏속의 사랑 — 백혈구와 적혈구 이야기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;700;900&family=Noto+Sans+KR:wght@300;400;500&family=Libre+Baskerville:wght@400;700&family=Cormorant+Upright:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+
+:root {
+  --blood:    #8b0000;
+  --crimson:  #c0392b;
+  --rose:     #e8726a;
+  --blush:    #f5c6c3;
+  --white-cell:#e8f4f8;
+  --blue-cell: #4a9bbe;
+  --deep:     #1a0508;
+  --warm-dark:#2d1015;
+  --ivory:    #fdf8f5;
+  --cream:    #f8f0ea;
+  --text-main:#2a1018;
+  --text-soft:#6b3a42;
+  --gold:     #c9943a;
+}
+
+body {
+  background: var(--deep);
+  font-family: 'Noto Serif KR', serif;
+  color: var(--ivory);
+  overflow-x: hidden;
+}
+
+/* ═══ HERO — LIVING VESSEL ═══ */
+#hero {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#bgCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Microscope vignette */
+#hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 30%,
+    rgba(10,2,4,0.5) 65%,
+    rgba(10,2,4,0.95) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Microscope ring */
+#hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+  box-shadow: inset 0 0 0 3px rgba(192,57,43,0.12);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  padding: 0 24px;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 10px;
+  font-weight: 300;
+  letter-spacing: 0.45em;
+  color: var(--rose);
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  opacity: 0;
+  animation: fadeUp 0.8s ease 0.6s forwards;
+}
+
+.badge-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--rose);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,100% { transform:scale(1); opacity:1; }
+  50% { transform:scale(1.6); opacity:0.5; }
+}
+
+.hero-title {
+  font-family: 'Cormorant Upright', serif;
+  font-size: clamp(52px, 12vw, 130px);
+  font-weight: 700;
+  line-height: 0.88;
+  letter-spacing: -0.02em;
+  color: var(--ivory);
+  opacity: 0;
+  animation: fadeUp 1.2s cubic-bezier(0.16,1,0.3,1) 0.9s forwards;
+}
+
+.hero-title .sub-line {
+  display: block;
+  font-size: 0.45em;
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  color: var(--blush);
+  margin-top: 12px;
+}
+
+.hero-ref {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: 0.3em;
+  color: var(--text-soft);
+  margin-top: 28px;
+  opacity: 0;
+  animation: fadeUp 0.8s ease 1.5s forwards;
+}
+
+.scroll-hint {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  animation: fadeIn 1s ease 2.2s forwards;
+}
+
+.scroll-hint span {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 9px;
+  font-weight: 300;
+  letter-spacing: 0.4em;
+  color: rgba(245,198,195,0.4);
+  text-transform: uppercase;
+}
+
+.scroll-stem {
+  width: 1px;
+  height: 48px;
+  background: linear-gradient(180deg, var(--rose), transparent);
+  animation: stemDrop 2s ease-in-out infinite;
+}
+
+@keyframes stemDrop {
+  0%,100%{ transform:scaleY(1) translateY(0); opacity:1; }
+  50%{ transform:scaleY(0.6) translateY(10px); opacity:0.4; }
+}
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(24px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes fadeIn { to { opacity:1; } }
+
+/* ═══ SECTION SYSTEM ═══ */
+.chapter {
+  position: relative;
+}
+
+/* ═══ CHAPTER 1 — WHITE CELL ═══ */
+.chapter-wbc {
+  background: var(--warm-dark);
+  padding: 0;
+  overflow: hidden;
+}
+
+.chapter-inner {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 100px 40px;
+}
+
+/* Two-column layout: text + illustration */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 60px;
+  align-items: start;
+}
+
+.two-col.reverse { grid-template-columns: 360px 1fr; }
+
+@media(max-width: 780px) {
+  .two-col, .two-col.reverse {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+}
+
+/* Chapter label */
+.ch-eyebrow {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.wbc-color { color: var(--blue-cell); }
+.rbc-color { color: var(--rose); }
+.love-color { color: var(--gold); }
+
+.ch-title {
+  font-family: 'Cormorant Upright', serif;
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 32px;
+  color: var(--ivory);
+}
+
+.ch-rule {
+  width: 36px; height: 2px;
+  margin-bottom: 36px;
+}
+
+.rule-blue { background: var(--blue-cell); }
+.rule-red  { background: var(--crimson); }
+.rule-gold { background: var(--gold); }
+
+.body-p {
+  font-size: clamp(14px, 1.9vw, 17px);
+  line-height: 2.05;
+  color: rgba(253,248,245,0.75);
+  margin-bottom: 20px;
+}
+
+.body-p:last-child { margin-bottom: 0; }
+
+/* KEY PULL-QUOTE */
+.pull-quote {
+  margin: 40px 0;
+  padding: 28px 32px;
+  border-left: 3px solid;
+  background: rgba(255,255,255,0.03);
+  font-family: 'Cormorant Upright', serif;
+  font-size: clamp(18px, 2.6vw, 24px);
+  font-weight: 600;
+  line-height: 1.7;
+  color: var(--ivory);
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: all 0.7s ease;
+}
+
+.pull-quote.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.pq-blue { border-color: var(--blue-cell); }
+.pq-red  { border-color: var(--crimson); }
+
+/* ILLUSTRATION PANELS */
+.illus-panel {
+  position: relative;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+
+.illus-panel.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.microscope-frame {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.04), transparent 60%),
+              rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow:
+    inset 0 0 60px rgba(0,0,0,0.5),
+    0 0 40px rgba(0,0,0,0.4),
+    0 0 0 1px rgba(255,255,255,0.05);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.micro-canvas {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.micro-label {
+  position: absolute;
+  bottom: -28px;
+  left: 0; right: 0;
+  text-align: center;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 10px;
+  font-weight: 300;
+  letter-spacing: 0.35em;
+  color: rgba(253,248,245,0.3);
+  text-transform: uppercase;
+}
+
+/* Stat callouts */
+.stat-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  opacity: 0;
+  transform: translateX(20px);
+  transition: all 0.5s ease;
+}
+
+.stat-chip.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.stat-chip:nth-child(2) { transition-delay: 0.1s; }
+.stat-chip:nth-child(3) { transition-delay: 0.2s; }
+
+.stat-num {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 22px;
+  font-weight: 700;
+  flex-shrink: 0;
+  min-width: 52px;
+}
+
+.num-blue { color: var(--blue-cell); }
+.num-red  { color: var(--rose); }
+
+.stat-desc {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 300;
+  line-height: 1.6;
+  color: rgba(253,248,245,0.5);
+}
+
+/* ═══ DIVIDER — BLOOD STREAM ═══ */
+.stream-divider {
+  position: relative;
+  height: 80px;
+  background: var(--deep);
+  overflow: hidden;
+}
+
+.stream-divider canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+}
+
+/* ═══ CHAPTER 2 — RED CELL ═══ */
+.chapter-rbc {
+  background: var(--deep);
+  overflow: hidden;
+}
+
+/* ═══ SCRIPTURE SECTION ═══ */
+.scripture-section {
+  background: var(--cream);
+  padding: 100px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.scripture-section::before {
+  content: '愛';
+  position: absolute;
+  right: -30px; top: 50%;
+  transform: translateY(-55%);
+  font-family: 'Cormorant Upright', serif;
+  font-size: 400px;
+  font-weight: 700;
+  color: rgba(192,57,43,0.06);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.scripture-inner {
+  max-width: 760px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Stamp */
+.scripture-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 40px;
+}
+
+.stamp-sq {
+  width: 44px; height: 44px;
+  background: var(--crimson);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Libre Baskerville', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ivory);
+  flex-shrink: 0;
+}
+
+.stamp-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stamp-book {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  color: var(--crimson);
+  text-transform: uppercase;
+}
+
+.stamp-ref {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: 0.15em;
+  color: var(--text-soft);
+}
+
+.scripture-verse {
+  font-family: 'Noto Serif KR', serif;
+  font-size: clamp(15px, 2.2vw, 20px);
+  line-height: 2.1;
+  color: var(--text-main);
+  margin-bottom: 20px;
+}
+
+.scripture-verse strong {
+  font-weight: 700;
+  color: var(--blood);
+}
+
+/* ═══ TESTIMONY SECTION ═══ */
+.testimony-section {
+  background: var(--warm-dark);
+  padding: 100px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.testimony-inner {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.testimony-header {
+  margin-bottom: 60px;
+}
+
+/* Timeline style testimony */
+.testimony-flow {
+  position: relative;
+  padding-left: 40px;
+}
+
+.testimony-flow::before {
+  content: '';
+  position: absolute;
+  left: 9px; top: 0; bottom: 0;
+  width: 1px;
+  background: linear-gradient(180deg,
+    transparent,
+    var(--crimson) 10%,
+    var(--gold) 50%,
+    rgba(201,148,58,0.3) 90%,
+    transparent);
+}
+
+.t-node {
+  position: relative;
+  margin-bottom: 48px;
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: all 0.7s ease;
+}
+
+.t-node.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.t-node:nth-child(2){ transition-delay:0.1s; }
+.t-node:nth-child(3){ transition-delay:0.2s; }
+.t-node:nth-child(4){ transition-delay:0.3s; }
+
+.t-dot {
+  position: absolute;
+  left: -36px; top: 6px;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 2px solid;
+  background: var(--warm-dark);
+  flex-shrink: 0;
+}
+
+.dot-red  { border-color: var(--crimson); box-shadow: 0 0 8px rgba(192,57,43,0.5); }
+.dot-gold { border-color: var(--gold);    box-shadow: 0 0 8px rgba(201,148,58,0.5); }
+
+.t-label {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  margin-bottom: 10px;
+}
+
+.t-text {
+  font-size: clamp(14px, 1.9vw, 17px);
+  line-height: 2.05;
+  color: rgba(253,248,245,0.75);
+}
+
+/* ═══ FINAL — CLOSING ═══ */
+.final-section {
+  background: var(--deep);
+  padding: 140px 40px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.final-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(192,57,43,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.final-inner {
+  max-width: 680px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.final-eyebrow {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 9px;
+  font-weight: 300;
+  letter-spacing: 0.55em;
+  text-transform: uppercase;
+  color: var(--rose);
+  margin-bottom: 32px;
+  display: block;
+}
+
+.final-quote {
+  font-family: 'Cormorant Upright', serif;
+  font-size: clamp(22px, 4vw, 38px);
+  font-weight: 600;
+  line-height: 1.7;
+  color: var(--ivory);
+  margin-bottom: 48px;
+}
+
+.final-quote em {
+  font-style: normal;
+  color: var(--rose);
+}
+
+.final-rule {
+  width: 48px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--crimson), transparent);
+  margin: 0 auto 32px;
+}
+
+.closing-block {
+  padding: 40px;
+  border: 1px solid rgba(192,57,43,0.2);
+  position: relative;
+  text-align: left;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.8s ease;
+}
+
+.closing-block.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.closing-block::before {
+  content:'';
+  position:absolute;
+  top:-1px; left:-1px;
+  width:18px; height:18px;
+  border-top:2px solid var(--crimson);
+  border-left:2px solid var(--crimson);
+}
+.closing-block::after {
+  content:'';
+  position:absolute;
+  bottom:-1px; right:-1px;
+  width:18px; height:18px;
+  border-bottom:2px solid var(--crimson);
+  border-right:2px solid var(--crimson);
+}
+
+.closing-text {
+  font-size: clamp(14px, 1.9vw, 17px);
+  line-height: 2.05;
+  color: rgba(253,248,245,0.7);
+}
+
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.7s ease;
+}
+.scroll-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HERO ═══ -->
+<section id="hero">
+  <canvas id="bgCanvas"></canvas>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <div class="badge-dot"></div>
+      살아있는 사랑의 과학
+      <div class="badge-dot"></div>
+    </div>
+    <h1 class="hero-title">
+      핏속의<br>사랑
+      <span class="sub-line">백혈구와 적혈구가 전하는 이야기</span>
+    </h1>
+    <div class="hero-ref">요한복음 15:12–17 · John 15</div>
+  </div>
+  <div class="scroll-hint">
+    <span>scroll</span>
+    <div class="scroll-stem"></div>
+  </div>
+</section>
+
+<!-- ═══ CHAPTER 1 — WHITE BLOOD CELL ═══ -->
+<section class="chapter chapter-wbc">
+  <div class="chapter-inner">
+    <div class="two-col">
+      <!-- Text -->
+      <div>
+        <span class="ch-eyebrow wbc-color">Chapter 01 · 백혈구 · White Blood Cell</span>
+        <h2 class="ch-title">껴안아 버리는 사랑</h2>
+        <div class="ch-rule rule-blue"></div>
+
+        <p class="body-p">우리의 몸의 혈액에는 백혈구와 적혈구라는 성분이 들어있습니다.... 그 중에서 백혈구는... 우리 몸에 어떤 이상한 병균이 들어오면.. 얼른 그 침입자를 처리하는 일을 맡아 하고 있죠...</p>
+
+        <p class="body-p">그런데 백혈구가 침입자를 처리하는 모습을 보면.. 아주 커다란 진리를 깨달을 수 있습니다. 얼핏 생각하면 백혈구는.. 아주 강력한 어떤 방법을 쓸 것만 같습니다만, 그는 절대 무력을 쓰거나 학대의 방법을 사용하지 않습니다.</p>
+
+        <p class="body-p">넌 왜 그렇게 더러워... 넌 왜 이렇게 지저분해.. 이렇게 놀려대지도... 아주 심한 욕설을 하는 것도 아닙니다.</p>
+
+        <div class="pull-quote pq-blue scroll-reveal">
+          그저 침입자에게 가까이 다가가 자신의 가슴을 활짝 열어주며 품안에 꼭 껴안아 버리는 겁니다.... 그리고 아주 깊은 사랑으로 그를 감싸주는 겁니다.
+        </div>
+
+        <p class="body-p">백혈구에게 안긴 그 침입자는 너무 황홀해서 정신이 없을 겁니다. 왜냐하면 단 한번도 그런 사랑을 받아 본적이 없을 테니까요....... 그리고 그 침입자는 백혈구의 사랑에 감동해서 그렇게 녹아버리는 겁니다.</p>
+
+        <p class="body-p">백혈구의 사랑이 너무나 아름답고 놀랍지 않습니까?! 보기 싫든, 지저분하든, 가리지 않고 백혈구는 모두 다 껴안아 줍니다. 그는 우리 인간과는 너무나도 다른 그런 사랑을 하고 있는 겁니다...</p>
+      </div>
+
+      <!-- Illustration -->
+      <div>
+        <div class="illus-panel scroll-reveal">
+          <div class="microscope-frame">
+            <canvas id="wbcCanvas" class="micro-canvas"></canvas>
+          </div>
+          <div class="micro-label">백혈구 · Leukocyte · ×400</div>
+        </div>
+
+        <div class="stat-chips" style="margin-top:48px;">
+          <div class="stat-chip scroll-reveal">
+            <span class="stat-num num-blue">∞</span>
+            <div class="stat-desc">가리지 않고 — 보기 싫든, 지저분하든<br>모두 다 껴안아 주는 사랑</div>
+          </div>
+          <div class="stat-chip scroll-reveal">
+            <span class="stat-num num-blue">0</span>
+            <div class="stat-desc">무력 사용 횟수<br>오직 사랑으로만 처리합니다</div>
+          </div>
+          <div class="stat-chip scroll-reveal">
+            <span class="stat-num num-blue">1회</span>
+            <div class="stat-desc">포옹 — 그것으로 충분합니다<br>침입자는 사랑에 녹아버립니다</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stream divider -->
+<div class="stream-divider">
+  <canvas id="streamCanvas"></canvas>
+</div>
+
+<!-- ═══ CHAPTER 2 — RED BLOOD CELL ═══ -->
+<section class="chapter chapter-rbc">
+  <div class="chapter-inner">
+    <div class="two-col reverse">
+      <!-- Illustration -->
+      <div>
+        <div class="illus-panel scroll-reveal">
+          <div class="microscope-frame">
+            <canvas id="rbcCanvas" class="micro-canvas"></canvas>
+          </div>
+          <div class="micro-label">적혈구 · Erythrocyte · ×400</div>
+        </div>
+
+        <div class="stat-chips" style="margin-top:48px;">
+          <div class="stat-chip scroll-reveal">
+            <span class="stat-num num-red">100%</span>
+            <div class="stat-desc">자신의 모든 것을 줍니다<br>한 조각도 남겨두지 않습니다</div>
+          </div>
+          <div class="stat-chip scroll-reveal">
+            <span class="stat-num num-red">4일</span>
+            <div class="stat-desc">다 주고 나면<br>조용히 숨을 거둡니다</div>
+          </div>
+          <div class="stat-chip scroll-reveal">
+            <span class="stat-num num-red">0</span>
+            <div class="stat-desc">계산적인 사랑 — 없습니다<br>오직 주는 것만 있습니다</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Text -->
+      <div>
+        <span class="ch-eyebrow rbc-color">Chapter 02 · 적혈구 · Red Blood Cell</span>
+        <h2 class="ch-title">100% 다 줘버리는 사랑</h2>
+        <div class="ch-rule rule-red"></div>
+
+        <p class="body-p">우리의 몸에는 또한 적혈구라는 것이 있습니다. 이 적혈구는 아주 사랑이 넘치는 친구입니다. 우리 몸에 있어 산소란 건 정말 중요한 생명과도 같은 것입니다.....</p>
+
+        <p class="body-p">그런데 적혈구는 언제나 이리저리 다니다, 산소가 필요한 곳이 있으면 아낌없이 자신의 가장 소중한 그것을 내어 줘 버리는 겁니다. 자신의 것도 조금만 챙겨두면 좋을텐데.....</p>
+
+        <div class="pull-quote pq-red scroll-reveal">
+          적혈구는 자신의 모든 것을 100%다 줘 버립니다... 그리고는 4일쯤 살아 있다가... 몸의 어느 구석에선가 조용히 숨을 거두고 마는 겁니다...
+        </div>
+
+        <p class="body-p">아마 우리 사람 같으면 자기 것은 조금 남겨두고 남에게 주었을 겁니다. 그런데...그런데... 적혈구는 그런 계산적인 사랑을 하지 않습니다...</p>
+
+        <p class="body-p">우리 몸은 바로 이런 사랑을 행할 줄 아는 작은 생명들이 모여 이루어 졌습니다.... 이 말을 다시 곰곰히 생각해보면 우리 안에는 바로 이런 사랑을 행할 능력이 누구에게나 다 숨겨져 있다는 겁니다...</p>
+
+        <p class="body-p">하지만 이런 우리의 몸에도 지금 사랑의 희생은 일어나고 있습니다... 자신을 드러내지 않으며... 따뜻하고 유유히 흘러가는 바로 당신의 핏속에서... 핏속에서도 말입니다........</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stream divider 2 -->
+<div class="stream-divider">
+  <canvas id="streamCanvas2"></canvas>
+</div>
+
+<!-- ═══ SCRIPTURE ═══ -->
+<section class="scripture-section">
+  <div class="scripture-inner">
+    <div class="scripture-stamp scroll-reveal">
+      <div class="stamp-sq">요</div>
+      <div class="stamp-meta">
+        <span class="stamp-book">요한복음 · John</span>
+        <span class="stamp-ref">15장 12절 — 17절</span>
+      </div>
+    </div>
+
+    <p class="scripture-verse scroll-reveal">나의 계명은 이것인데, 곧 <strong>내가 여러분을 사랑한 것같이 여러분도 서로 사랑하라</strong>는 것입니다 친구를 위하여 자기 목숨을 버리는 것보다 더 큰 사랑을 가진 사람은 없습니다. 내가 여러분에게 명령하는 것을 행한다면, 여러분은 나의 친구들입니다.</p>
+
+    <p class="scripture-verse scroll-reveal">나는 더 이상 여러분을 노예라고 부르지 않을 것입니다. 왜냐하면 노예는 자기 주인이 하는 것을 알지 못하기 때문입니다. 오히려 나는 여러분을 친구라고 불렀는데. 이것은 내가 아버지께 들은 모든 것을 여러분에게 알려 주었기 때문입니다. 여러분이 나를 선택한 것이 아니라 내가 여러분을 선택하여 세웠습니다. 이것은 여러분이 나가서 열매를 맺고 그 열매가 계속 남아 있도록 하려는 것이며 여러분이 내 이름 안에서 아버지께 무엇을 구하든지, 아버지께서 여러분에게 주시도록 하려는 것입니다 내가 여러분에게 이러한 것들을 명령하는 것은 <strong>여러분이 서로 사랑하도록 하려는 것입니다.</strong></p>
+  </div>
+</section>
+
+<!-- ═══ TESTIMONY ═══ -->
+<section class="testimony-section">
+  <div class="testimony-inner">
+    <div class="testimony-header">
+      <span class="ch-eyebrow love-color" style="opacity:1;">Testimony · 나의 이야기</span>
+      <h2 class="ch-title">나의 친구 예수님을 아십니까?</h2>
+      <div class="ch-rule rule-gold"></div>
+    </div>
+
+    <div class="testimony-flow">
+      <div class="t-node scroll-reveal">
+        <div class="t-dot dot-red"></div>
+        <div class="t-label">그분의 사랑</div>
+        <p class="t-text">여러분 나의 친구 예수님을 아십니까? 그 친구는 나를 위하여 자신의 목숨까지도 버렸으며 신분의 격차를 넘어서며 나를 친구를 맞이하였습니다. 그리고 그가 아버지께 들은 모든 축복과 능력의 말씀을 또한 나에게 속삭이듯 들려주고 가르쳐 주었답니다.</p>
+      </div>
+
+      <div class="t-node scroll-reveal">
+        <div class="t-dot dot-red"></div>
+        <div class="t-label">나의 외면</div>
+        <p class="t-text">난 그 친구가 싫었답니다. 나의 사생활을 간섭하는 것 같고 또 그 친구가 너무 고리타분하게 여겨졌기 때문에 사람들이 그 친구를 향한 멸시와 조롱이 마치 나에게 오는 것 같아 그 친구를 멀리하였습니다.</p>
+      </div>
+
+      <div class="t-node scroll-reveal">
+        <div class="t-dot dot-gold"></div>
+        <div class="t-label">깊은 수렁에서</div>
+        <p class="t-text">그러나 내가 나의 근본을 알고 절망과 큰 사망의 깊은 수렁 속에 빠져 있을 때 그 친구는 나를 대신하여 자신의 목숨까지도 버렸답니다. 내가 그 사실을 알게 되었을 때 난 정말이지 그 친구에게 너무 미안하고 고맙고 감사하였습니다.</p>
+      </div>
+
+      <div class="t-node scroll-reveal">
+        <div class="t-dot dot-gold"></div>
+        <div class="t-label">결심</div>
+        <p class="t-text">그 친구는 나에게 사랑이 무엇인지를 가르쳐 주었답니다. 그때 난 내 마음속에 한 가지 결심을 했답니다. 내가 받은 사랑을 다른 모든 이들에게 들려주고 싶다고...</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FINAL ═══ -->
+<section class="final-section">
+  <div class="final-glow"></div>
+  <div class="final-inner">
+    <span class="final-eyebrow">The Truth · 핏속의 진리</span>
+    <div class="final-quote">
+      우리 안에는 바로 이런 사랑을 행할 능력이<br>
+      <em>누구에게나 다 숨겨져 있다는 겁니다...</em>
+    </div>
+    <div class="final-rule"></div>
+    <div class="closing-block scroll-reveal">
+      <p class="closing-text">그런데 우리는 마음속에 깊이 담겨있는 이 사랑을 드러내지 못하고 살 때가 많이 있습니다..... 자신의 한없이 이기적이고 나쁜 성격을 가지고 있다고만 생각하고 이런 부분에 대해 아예 포기해 버리고 살아가고 있을 때가 많이 있는 것이죠... 하지만 이런 우리의 몸에도 지금 사랑의 희생은 일어나고 있습니다... 자신을 드러내지 않으며... 따뜻하고 유유히 흘러가는 바로 당신의 핏속에서... 핏속에서도 말입니다........</p>
+    </div>
+  </div>
+</section>
+
+<script>
+// ════════════════════════════════════════
+// HERO BG — flowing blood cells
+// ════════════════════════════════════════
+(function(){
+  const canvas = document.getElementById('bgCanvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, cells = [], t = 0;
+
+  function resize(){
+    W = canvas.width = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+
+  // Blood cell types
+  function makeCell(){
+    const isRed = Math.random() > 0.25;
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: isRed ? (8 + Math.random()*12) : (14 + Math.random()*18),
+      vx: (Math.random()-0.5) * 0.4,
+      vy: (Math.random()-0.5) * 0.25 + 0.15,
+      isRed,
+      phase: Math.random()*Math.PI*2,
+      opacity: 0.15 + Math.random()*0.35,
+      wobble: Math.random() * 0.02 + 0.01
+    };
+  }
+
+  resize();
+  for(let i=0; i<70; i++) cells.push(makeCell());
+
+  function drawRBC(x, y, r, alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    // Biconcave disc shape
+    const grad = ctx.createRadialGradient(x-r*0.3, y-r*0.3, 0, x, y, r);
+    grad.addColorStop(0, 'rgba(220,80,70,0.9)');
+    grad.addColorStop(0.4, 'rgba(160,30,30,0.7)');
+    grad.addColorStop(0.75, 'rgba(120,10,10,0.5)');
+    grad.addColorStop(1, 'rgba(80,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(x, y, r, r*0.65, 0, 0, Math.PI*2);
+    ctx.fill();
+    // Center dimple
+    const inner = ctx.createRadialGradient(x, y, 0, x, y, r*0.35);
+    inner.addColorStop(0, 'rgba(60,0,0,0.4)');
+    inner.addColorStop(1, 'rgba(60,0,0,0)');
+    ctx.fillStyle = inner;
+    ctx.beginPath();
+    ctx.ellipse(x, y, r*0.35, r*0.25, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawWBC(x, y, r, alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    // Larger, irregular, blue-white
+    const grad = ctx.createRadialGradient(x-r*0.2, y-r*0.2, 0, x, y, r);
+    grad.addColorStop(0, 'rgba(180,220,240,0.8)');
+    grad.addColorStop(0.5, 'rgba(100,160,200,0.4)');
+    grad.addColorStop(1, 'rgba(60,120,160,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    // Slightly irregular circle
+    ctx.ellipse(x, y, r, r*0.9, Math.sin(t*0.5)*0.3, 0, Math.PI*2);
+    ctx.fill();
+    // Nucleus
+    const nGrad = ctx.createRadialGradient(x, y, 0, x, y, r*0.4);
+    nGrad.addColorStop(0, 'rgba(80,130,180,0.5)');
+    nGrad.addColorStop(1, 'rgba(80,130,180,0)');
+    ctx.fillStyle = nGrad;
+    ctx.beginPath();
+    ctx.ellipse(x, y, r*0.4, r*0.35, 0.5, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function draw(){
+    ctx.clearRect(0, 0, W, H);
+
+    // Background gradient
+    const bg = ctx.createRadialGradient(W*0.5, H*0.4, 0, W*0.5, H*0.5, Math.max(W,H)*0.8);
+    bg.addColorStop(0, '#3d0a10');
+    bg.addColorStop(0.5, '#1a0508');
+    bg.addColorStop(1, '#0a0204');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Plasma glow stream
+    const stream = ctx.createLinearGradient(0, H*0.3, 0, H*0.7);
+    stream.addColorStop(0, 'transparent');
+    stream.addColorStop(0.5, 'rgba(140,20,20,0.06)');
+    stream.addColorStop(1, 'transparent');
+    ctx.fillStyle = stream;
+    ctx.fillRect(0, 0, W, H);
+
+    t += 0.016;
+
+    cells.forEach(c => {
+      const wx = Math.sin(t * c.wobble * 50 + c.phase) * 1.5;
+      const wy = Math.cos(t * c.wobble * 30 + c.phase) * 0.8;
+
+      if(c.isRed) drawRBC(c.x + wx, c.y + wy, c.r, c.opacity);
+      else drawWBC(c.x + wx, c.y + wy, c.r, c.opacity);
+
+      c.x += c.vx;
+      c.y += c.vy;
+      if(c.y > H + 30) { c.y = -30; c.x = Math.random()*W; }
+      if(c.x < -30) c.x = W+30;
+      if(c.x > W+30) c.x = -30;
+    });
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', resize);
+  draw();
+})();
+
+// ════════════════════════════════════════
+// WBC MICROSCOPE — embrace animation
+// ════════════════════════════════════════
+(function(){
+  const canvas = document.getElementById('wbcCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let t=0, W, H;
+
+  function resize(){
+    const rect = canvas.getBoundingClientRect();
+    W = canvas.width = rect.width;
+    H = canvas.height = rect.height;
+  }
+
+  const observer = new ResizeObserver(resize);
+  observer.observe(canvas);
+  resize();
+
+  // One WBC + one invader being embraced
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const cx = W/2, cy = H/2;
+    t += 0.01;
+
+    // Background: dark with blue tint
+    const bg = ctx.createRadialGradient(cx,cy,0,cx,cy,Math.min(W,H)*0.5);
+    bg.addColorStop(0,'rgba(20,40,60,0.9)');
+    bg.addColorStop(1,'rgba(5,10,20,0.9)');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0,0,W,H);
+
+    const baseR = Math.min(W,H) * 0.22;
+
+    // Invader — small red spiky thing
+    const invAngle = Math.sin(t*0.5) * 0.8;
+    const invDist = Math.max(0, Math.min(baseR*1.4, baseR*1.4 - t*baseR*0.07));
+    const ix = cx + Math.cos(invAngle + Math.PI*0.3) * invDist;
+    const iy = cy + Math.sin(invAngle + Math.PI*0.3) * invDist;
+
+    ctx.save();
+    ctx.translate(ix, iy);
+    ctx.rotate(t * 0.5);
+    // Spiky invader
+    for(let i=0;i<8;i++){
+      const a = (i/8)*Math.PI*2;
+      const r1 = baseR*0.1, r2 = baseR*0.15;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a)*r1, Math.sin(a)*r1);
+      ctx.lineTo(Math.cos(a+0.2)*r2, Math.sin(a+0.2)*r2);
+      ctx.lineTo(Math.cos(a+0.4)*r1, Math.sin(a+0.4)*r1);
+      ctx.closePath();
+      const alpha = Math.max(0, 1 - t*0.05);
+      ctx.fillStyle = `rgba(200,80,80,${alpha*0.7})`;
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // WBC body — embracing arms
+    // Main body
+    const wbcGrad = ctx.createRadialGradient(cx-baseR*0.15, cy-baseR*0.15, 0, cx, cy, baseR);
+    wbcGrad.addColorStop(0,'rgba(150,200,230,0.7)');
+    wbcGrad.addColorStop(0.6,'rgba(80,140,180,0.4)');
+    wbcGrad.addColorStop(1,'rgba(40,80,120,0)');
+    ctx.fillStyle = wbcGrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, baseR, 0, Math.PI*2);
+    ctx.fill();
+
+    // Pseudopod arms extending toward invader
+    const armProgress = Math.min(1, t * 0.08);
+    const armReach = baseR * (1 + armProgress * 0.8);
+    const armAngle = Math.atan2(iy-cy, ix-cx);
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    for(let arm=-1;arm<=1;arm+=2){
+      const a = armAngle + arm * (0.5 - armProgress*0.3);
+      const armGrad = ctx.createLinearGradient(0,0, Math.cos(a)*armReach, Math.sin(a)*armReach);
+      armGrad.addColorStop(0,'rgba(100,170,210,0.35)');
+      armGrad.addColorStop(1,'rgba(100,170,210,0.1)');
+      ctx.beginPath();
+      ctx.moveTo(0,0);
+      ctx.quadraticCurveTo(
+        Math.cos(a)*armReach*0.5 + Math.cos(a+arm*0.8)*baseR*0.3,
+        Math.sin(a)*armReach*0.5 + Math.sin(a+arm*0.8)*baseR*0.3,
+        Math.cos(a)*armReach,
+        Math.sin(a)*armReach
+      );
+      ctx.lineWidth = baseR*0.22;
+      ctx.strokeStyle = armGrad;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Nucleus
+    const nGrad = ctx.createRadialGradient(cx,cy,0,cx,cy,baseR*0.38);
+    nGrad.addColorStop(0,'rgba(60,110,160,0.7)');
+    nGrad.addColorStop(1,'rgba(60,110,160,0)');
+    ctx.fillStyle = nGrad;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, baseR*0.38, baseR*0.3, 0.4, 0, Math.PI*2);
+    ctx.fill();
+
+    // Glow halo
+    const halo = ctx.createRadialGradient(cx,cy,baseR*0.8,cx,cy,baseR*1.2);
+    halo.addColorStop(0,'rgba(100,180,220,0.08)');
+    halo.addColorStop(1,'rgba(100,180,220,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath();
+    ctx.arc(cx, cy, baseR*1.2, 0, Math.PI*2);
+    ctx.fill();
+
+    if(t > 20) t = 0; // loop
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ════════════════════════════════════════
+// RBC MICROSCOPE — giving oxygen
+// ════════════════════════════════════════
+(function(){
+  const canvas = document.getElementById('rbcCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let t=0, W, H, particles=[];
+
+  function resize(){
+    const rect = canvas.getBoundingClientRect();
+    W = canvas.width = rect.width;
+    H = canvas.height = rect.height;
+  }
+
+  const observer = new ResizeObserver(resize);
+  observer.observe(canvas);
+  resize();
+
+  for(let i=0;i<20;i++){
+    particles.push({
+      x: 0, y: 0,
+      vx: (Math.random()-0.5)*2.5,
+      vy: (Math.random()-0.5)*2.5 - 1.5,
+      life: Math.random(),
+      maxLife: 0.8 + Math.random()*0.4,
+      r: 2 + Math.random()*4
+    });
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const cx=W/2, cy=H/2;
+    t += 0.012;
+
+    // Dark warm background
+    const bg = ctx.createRadialGradient(cx,cy,0,cx,cy,Math.min(W,H)*0.5);
+    bg.addColorStop(0,'rgba(50,10,10,0.9)');
+    bg.addColorStop(1,'rgba(10,2,2,0.95)');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0,0,W,H);
+
+    const r = Math.min(W,H)*0.24;
+    // Shrinking RBC (giving away oxygen = getting paler)
+    const shrink = 1 - Math.min(0.3, t*0.006);
+    const curR = r * shrink;
+    const fadeAlpha = shrink;
+
+    // RBC
+    const rbcGrad = ctx.createRadialGradient(cx-curR*0.25, cy-curR*0.25, 0, cx, cy, curR);
+    rbcGrad.addColorStop(0, `rgba(230,100,90,${fadeAlpha*0.9})`);
+    rbcGrad.addColorStop(0.5, `rgba(170,40,40,${fadeAlpha*0.7})`);
+    rbcGrad.addColorStop(0.85, `rgba(110,10,10,${fadeAlpha*0.5})`);
+    rbcGrad.addColorStop(1, 'rgba(80,0,0,0)');
+    ctx.fillStyle = rbcGrad;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, curR, curR*0.65, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Center dimple
+    const dimple = ctx.createRadialGradient(cx,cy,0,cx,cy,curR*0.3);
+    dimple.addColorStop(0,`rgba(50,0,0,${fadeAlpha*0.5})`);
+    dimple.addColorStop(1,'rgba(50,0,0,0)');
+    ctx.fillStyle = dimple;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, curR*0.3, curR*0.2, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Oxygen particles flying out
+    particles.forEach(p => {
+      p.life += 0.02;
+      if(p.life > p.maxLife){ p.life=0; p.x=cx+(Math.random()-0.5)*curR; p.y=cy+(Math.random()-0.5)*curR*0.5; }
+      const pAlpha = Math.sin((p.life/p.maxLife)*Math.PI)*0.8;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r*(1-p.life/p.maxLife*0.5), 0, Math.PI*2);
+      ctx.fillStyle = `rgba(255,160,80,${pAlpha*0.6})`;
+      ctx.fill();
+      // O2 label
+      if(p.r > 3){
+        ctx.fillStyle = `rgba(255,200,150,${pAlpha*0.5})`;
+        ctx.font = `${Math.max(8, p.r*1.8)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText('O₂', p.x, p.y+3);
+      }
+      p.x += p.vx;
+      p.y += p.vy;
+    });
+
+    if(t > 25) t = 0;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ════════════════════════════════════════
+// STREAM DIVIDERS
+// ════════════════════════════════════════
+function makeStream(id){
+  const canvas = document.getElementById(id);
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let t=0, cells=[];
+
+  function resize(){
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  for(let i=0;i<30;i++){
+    cells.push({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height,
+      r: 3+Math.random()*7,
+      vx: 0.5+Math.random()*1.5,
+      isRed: Math.random()>0.2
+    });
+  }
+
+  function draw(){
+    const W=canvas.width, H=canvas.height;
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = '#100205';
+    ctx.fillRect(0,0,W,H);
+
+    t+=0.016;
+    cells.forEach(c=>{
+      if(c.isRed){
+        const g = ctx.createRadialGradient(c.x,c.y,0,c.x,c.y,c.r);
+        g.addColorStop(0,'rgba(200,60,60,0.6)');
+        g.addColorStop(1,'rgba(200,60,60,0)');
+        ctx.fillStyle=g;
+        ctx.beginPath();
+        ctx.ellipse(c.x,c.y,c.r,c.r*0.6,0,0,Math.PI*2);
+        ctx.fill();
+      } else {
+        const g = ctx.createRadialGradient(c.x,c.y,0,c.x,c.y,c.r);
+        g.addColorStop(0,'rgba(100,170,210,0.4)');
+        g.addColorStop(1,'rgba(100,170,210,0)');
+        ctx.fillStyle=g;
+        ctx.beginPath();
+        ctx.arc(c.x,c.y,c.r,0,Math.PI*2);
+        ctx.fill();
+      }
+      c.x += c.vx;
+      if(c.x > W+20) c.x = -20;
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+makeStream('streamCanvas');
+makeStream('streamCanvas2');
+
+// ════════════════════════════════════════
+// SCROLL REVEAL
+// ════════════════════════════════════════
+const revealObs = new IntersectionObserver(entries=>{
+  entries.forEach(e => {
+    if(e.isIntersecting) e.target.classList.add('visible');
+  });
+}, {threshold:0.1, rootMargin:'0px 0px -40px 0px'});
+
+document.querySelectorAll('.scroll-reveal, .pull-quote, .illus-panel, .stat-chip, .t-node, .closing-block').forEach(el=>revealObs.observe(el));
+</script>
+</body>
+</html>

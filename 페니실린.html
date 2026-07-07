@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>페니실린의 기적과 복음의 비밀</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;900&family=Bebas+Neue&family=Nanum+Myeongjo:wght@400;700;800&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#04080a;}
+body{font-family:'Noto Serif KR',serif;color:#d8e8d0;cursor:none;user-select:none;}
+
+/* ══ 캔버스 ══ */
+#petri-canvas{position:fixed;inset:0;z-index:0;}
+#overlay-canvas{position:fixed;inset:0;z-index:1;pointer-events:none;}
+
+/* ══ 현미경 비네트 (원형 마스크) ══ */
+#microscope-ring{
+  position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 50% 50%,
+      transparent 38%,
+      rgba(4,8,10,0.55) 52%,
+      rgba(2,4,6,0.88) 62%,
+      rgba(1,2,4,0.97) 70%,
+      #02030a 78%
+    );
+}
+
+/* ══ 커서 (접종 루프) ══ */
+#cursor{
+  position:fixed;pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);
+  filter:drop-shadow(0 0 6px rgba(100,220,120,0.9));
+}
+
+/* ══ 오프닝 ══ */
+#opening{
+  position:fixed;inset:0;z-index:50;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  background:rgba(2,5,4,0.9);
+  gap:16px;transition:opacity 0.8s;
+}
+#opening-date{
+  font-family:'Special Elite',serif;font-size:10px;
+  letter-spacing:0.5em;text-transform:uppercase;
+  color:rgba(100,200,120,0.45);
+}
+#opening-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(40px,9vw,110px);
+  color:#fff;letter-spacing:0.04em;line-height:0.88;
+  text-align:center;
+  text-shadow:0 0 60px rgba(100,220,120,0.25);
+}
+#opening-sub{
+  font-family:'Noto Serif KR',serif;font-size:clamp(12px,1.8vw,16px);
+  color:rgba(200,230,200,0.5);text-align:center;
+  line-height:1.9;max-width:400px;word-break:keep-all;
+}
+#opening-btn{
+  margin-top:10px;padding:12px 48px;
+  border:1px solid rgba(100,200,120,0.35);
+  background:rgba(100,200,120,0.06);
+  color:rgba(140,230,160,0.8);
+  font-family:'Noto Serif KR',serif;font-size:15px;
+  cursor:pointer;letter-spacing:0.12em;border-radius:2px;
+  transition:all 0.2s;
+}
+#opening-btn:hover{background:rgba(100,200,120,0.16);border-color:rgba(100,200,120,0.7);}
+
+/* ══ 챕터 패널 ══ */
+.ch-panel{
+  position:fixed;z-index:20;
+  max-width:min(480px,42vw);
+  opacity:0;pointer-events:none;
+  transition:opacity 0.8s,transform 0.8s;
+  transform:translateY(16px);
+}
+.ch-panel.show{opacity:1;pointer-events:all;transform:translateY(0);}
+
+/* 패널 배경 — 실험실 노트 */
+.ch-inner{
+  background:rgba(4,12,6,0.92);
+  border:1px solid rgba(80,160,90,0.2);
+  border-top:2px solid rgba(80,160,90,0.5);
+  padding:clamp(20px,2.5vw,32px) clamp(20px,2.8vw,36px);
+  backdrop-filter:blur(6px);
+  position:relative;overflow:hidden;
+  max-height:82vh;overflow-y:auto;
+}
+.ch-inner::-webkit-scrollbar{width:3px;}
+.ch-inner::-webkit-scrollbar-thumb{background:rgba(80,160,90,0.3);}
+
+/* 노트 줄 배경 */
+.ch-inner::before{
+  content:'';position:absolute;inset:0;
+  background-image:repeating-linear-gradient(
+    to bottom,transparent,transparent 30px,
+    rgba(80,160,90,0.04) 30px,rgba(80,160,90,0.04) 31px
+  );
+  pointer-events:none;
+}
+
+.ch-tag{
+  font-family:'Special Elite',serif;font-size:9px;
+  letter-spacing:0.5em;text-transform:uppercase;
+  color:rgba(100,200,120,0.55);margin-bottom:10px;display:block;
+  position:relative;z-index:1;
+}
+.ch-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(24px,3.5vw,44px);
+  color:#fff;letter-spacing:0.03em;line-height:0.92;
+  margin-bottom:14px;word-break:keep-all;
+  position:relative;z-index:1;
+}
+.ch-body{
+  font-family:'Noto Serif KR',serif;
+  font-size:13.5px;line-height:2.05;
+  color:rgba(200,230,200,0.75);word-break:keep-all;
+  margin-bottom:0.8em;position:relative;z-index:1;
+}
+.ch-body strong{color:#fff;font-weight:600;}
+.ch-body:last-of-type{margin-bottom:0;}
+
+.ch-quote{
+  border-left:2px solid rgba(80,160,90,0.4);
+  padding:12px 0 12px 16px;margin:14px 0;
+  position:relative;z-index:1;
+}
+.ch-quote p{
+  font-family:'Nanum Myeongjo',serif;
+  font-size:clamp(13px,1.8vw,16px);font-weight:700;
+  color:#e8f5e8;line-height:1.8;word-break:keep-all;
+}
+.ch-quote .ref{
+  font-family:'Special Elite',serif;font-size:8px;
+  letter-spacing:0.35em;text-transform:uppercase;
+  color:rgba(100,200,120,0.5);margin-top:6px;display:block;
+}
+
+.ch-btn{
+  margin-top:16px;display:inline-block;
+  font-family:'Special Elite',serif;font-size:9px;
+  letter-spacing:0.45em;text-transform:uppercase;
+  color:rgba(100,200,120,0.5);cursor:pointer;
+  border:none;background:none;
+  animation:gblink 1.5s infinite;
+  position:relative;z-index:1;padding:8px 0;
+}
+.ch-btn:hover{color:rgba(100,200,120,0.9);}
+@keyframes gblink{0%,100%{opacity:0.3}50%{opacity:1}}
+
+/* 패널 위치 */
+#ch1{top:8vh;right:3vw;}
+#ch2{top:8vh;left:3vw;}
+#ch3{top:8vh;right:3vw;}
+#ch4{bottom:8vh;left:3vw;}
+#ch5{top:8vh;left:3vw;}
+
+/* ══ 진행 표시 ══ */
+#progress{
+  position:fixed;top:0;left:0;height:2px;z-index:30;
+  background:linear-gradient(to right,rgba(40,140,60,0.6),rgba(100,220,120,0.8));
+  width:0%;transition:width 0.6s;pointer-events:none;
+}
+#stage-label{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  z-index:30;font-family:'Special Elite',serif;font-size:8px;
+  letter-spacing:0.45em;text-transform:uppercase;
+  color:rgba(100,200,120,0.3);pointer-events:none;
+  white-space:nowrap;
+}
+
+/* ══ 클로징 오버레이 ══ */
+#closing{
+  position:fixed;inset:0;z-index:45;
+  overflow-y:auto;
+  background:linear-gradient(to bottom,#030a04,#040c05);
+  opacity:0;pointer-events:none;transition:opacity 0.8s;
+}
+#closing.show{opacity:1;pointer-events:all;}
+.cl-wrap{max-width:740px;margin:0 auto;padding:80px clamp(24px,6vw,60px) 100px;}
+.cl-top{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(40px,8vw,96px);
+  color:#fff;letter-spacing:0.03em;line-height:0.88;
+  margin-bottom:20px;word-break:keep-all;
+  text-shadow:0 0 40px rgba(100,200,120,0.2);
+}
+.cl-body{
+  font-family:'Noto Serif KR',serif;font-size:15.5px;
+  line-height:2.2;color:rgba(190,220,190,0.72);
+  word-break:keep-all;margin-bottom:0.9em;
+}
+.cl-body strong{color:#fff;font-weight:600;}
+.cl-verse{
+  border-top:1px solid rgba(100,200,120,0.2);
+  border-bottom:1px solid rgba(100,200,120,0.2);
+  padding:22px 0 18px;margin:22px 0;
+}
+.cl-ref{font-family:'Special Elite',serif;font-size:9px;
+  letter-spacing:0.45em;text-transform:uppercase;
+  color:rgba(100,200,120,0.55);margin-bottom:10px;display:block;}
+.cl-vt{font-family:'Nanum Myeongjo',serif;
+  font-size:clamp(15px,2.4vw,21px);font-weight:700;
+  color:#e8f5e0;line-height:1.85;word-break:keep-all;}
+.cl-church{
+  text-align:center;padding:40px 0 20px;
+  border-top:1px solid rgba(100,200,120,0.1);
+  margin-top:40px;
+}
+.cl-church-name{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(28px,5vw,56px);
+  color:rgba(100,200,120,0.8);letter-spacing:0.08em;
+}
+.cl-church p{
+  font-family:'Noto Serif KR',serif;font-size:14px;
+  color:rgba(180,220,180,0.55);line-height:2;margin-top:10px;
+}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:#030a04}
+::-webkit-scrollbar-thumb{background:rgba(100,200,120,0.25)}
+</style>
+</head>
+<body>
+
+<canvas id="petri-canvas"></canvas>
+<canvas id="overlay-canvas"></canvas>
+<div id="microscope-ring"></div>
+
+<div id="cursor">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="9" stroke="rgba(100,220,120,0.7)" stroke-width="1.2"/>
+    <circle cx="12" cy="12" r="3" fill="rgba(100,220,120,0.5)"/>
+    <line x1="12" y1="1" x2="12" y2="6" stroke="rgba(100,220,120,0.5)" stroke-width="1.2"/>
+    <line x1="12" y1="18" x2="12" y2="23" stroke="rgba(100,220,120,0.5)" stroke-width="1.2"/>
+    <line x1="1" y1="12" x2="6" y2="12" stroke="rgba(100,220,120,0.5)" stroke-width="1.2"/>
+    <line x1="18" y1="12" x2="23" y2="12" stroke="rgba(100,220,120,0.5)" stroke-width="1.2"/>
+  </svg>
+</div>
+
+<div id="progress"></div>
+<div id="stage-label">마우스를 움직여 곰팡이를 퍼뜨리세요</div>
+
+<div id="opening">
+  <span id="opening-date">1928년 9월 · 런던 · 세인트 메리 병원</span>
+  <div id="opening-title">페니실린의<br>기적</div>
+  <p id="opening-sub">과학과 섭리의 교차점<br>페트리 접시 하나가 인류를 구했습니다</p>
+  <button id="opening-btn" onclick="startStory()">▶ 현미경으로 들여다보기</button>
+</div>
+
+<div class="ch-panel" id="ch1">
+  <div class="ch-inner">
+    <span class="ch-tag">Chapter 01 · 1928 September</span>
+    <h2 class="ch-title">플레밍의<br>우연한<br>발견</h2>
+    <p class="ch-body">19세기 후반까지 폐렴, 결핵, 장티푸스 같은 감염병은 치명적이었고, 치료 수단은 거의 없었습니다. 실제로 세균을 안전하게 죽이는 약물은 존재하지 않았습니다.</p>
+    <p class="ch-body">1928년 9월 초, 플레밍은 2주간의 여름 휴가를 떠나며 페트리 접시들을 그대로 두고 갔습니다. 그 사이 런던의 열린 창문을 통해 <strong>공기 중의 곰팡이 포자가 접시 일부에 떨어졌습니다.</strong></p>
+    <p class="ch-body">플레밍이 돌아와 접시들을 관찰했을 때, 놀라운 현상을 발견했습니다. 일부 접시의 곰팡이 주변에는 세균이 자라지 않고 투명하게 녹아 있는 영역이 있었던 것입니다.</p>
+    <div class="ch-quote">
+      <p>"곰팡이가 세균의 성장을 억제하고 있다. 주위에 '세균의 사멸지대'가 형성되었다."</p>
+      <span class="ref">Alexander Fleming · Lab Notebook · 1928</span>
+    </div>
+    <p class="ch-body">플레밍은 이 곰팡이를 Penicillium notatum이라는 종임을 밝혀냈습니다. 이 곰팡이가 분비하는 물질이 <strong>세균의 세포벽을 파괴해 증식을 억제</strong>한다는 사실도 확인했죠.</p>
+    <button class="ch-btn" onclick="goChapter(2)">▼ 계속</button>
+  </div>
+</div>
+
+<div class="ch-panel" id="ch2">
+  <div class="ch-inner">
+    <span class="ch-tag">Chapter 02 · 1941–1945</span>
+    <h2 class="ch-title">약이 되기까지<br>10년의<br>협력</h2>
+    <p class="ch-body">플레밍은 1929년 "페니실린(penicillin)"이라 명명하며 논문을 발표했습니다. 그리고 10여 년 후, 옥스퍼드 대학의 하워드 플로리, 에른스트 체인, 노먼 히트리가 이 논문을 다시 주목했습니다.</p>
+    <p class="ch-body">1941년, 중증 감염으로 죽어가던 한 경찰관에게 최초로 페니실린을 투여하자 증상이 급격히 호전되었지만, 약의 양이 부족해 결국 사망했습니다.</p>
+    <p class="ch-body"><strong>"충분히 만들 수만 있다면 수많은 생명을 구할 수 있다."</strong> — 이 확신이 대량 생산을 이끌었습니다.</p>
+    <p class="ch-body">1944년 노르망디 상륙작전 때 페니실린은 대규모로 투입되어 수많은 군인의 생명을 구했습니다. 1945년, 플레밍, 플로리, 체인은 노벨 생리·의학상을 공동 수상했습니다.</p>
+    <button class="ch-btn" onclick="goChapter(3)">▼ 영적 진리로</button>
+  </div>
+</div>
+
+<div class="ch-panel" id="ch3">
+  <div class="ch-inner">
+    <span class="ch-tag">Chapter 03 · Spiritual Truth I & II</span>
+    <h2 class="ch-title">우연이 아닌<br>섭리</h2>
+    <p class="ch-body">페니실린의 발견은 사람의 눈에는 우연처럼 보였지만, 하나님께서는 이미 인류의 고통을 덜어줄 길을 예비해 두셨던 것입니다.</p>
+    <div class="ch-quote">
+      <p>"하나님 아버지는 우리가 사랑 안에서 하나님 앞에 거룩하고 흠이 없게 되도록 창세전에 그리스도 안에서 우리를 선택하셨으며 그분의 뜻의 선한 기쁨을 따라 예수 그리스도를 통하여 우리가 아들의 자격을 얻어 하나님 자신께 이르도록 우리를 미리 정하셨습니다."</p>
+      <span class="ref">에베소서 1장 4~5절 · Ephesians 1:4–5</span>
+    </div>
+    <p class="ch-body">아무 보잘것없는 곰팡이 한 포자가 세상을 바꾸었듯이, 여러분이 전하는 복음의 작은 발걸음 속에는 감추어진 천국이 나타나는 것입니다.</p>
+    <div class="ch-quote">
+      <p>"천국은 마치 밭에 감추어진 보물과 같습니다. 어떤 사람이 그 보물을 발견하고는 숨겨 두었습니다. 그리고 기뻐하며 가서, 자기의 모든 소유를 팔아 그 밭을 삽니다."</p>
+      <span class="ref">마태복음 13장 44절 · Matthew 13:44</span>
+    </div>
+    <button class="ch-btn" onclick="goChapter(4)">▼ 계속</button>
+  </div>
+</div>
+
+<div class="ch-panel" id="ch4">
+  <div class="ch-inner">
+    <span class="ch-tag">Chapter 04 · Spiritual Truth III & IV</span>
+    <h2 class="ch-title">함께 협력하고<br>구원의<br>항생제</h2>
+    <p class="ch-body">플레밍은 곰팡이를 발견했지만, 혼자서는 약으로 만들 수 없었습니다. 이는 한 사람의 능력이 아니라, 하나님의 은혜와 <strong>공동체의 협력</strong>이 이룬 결실입니다.</p>
+    <div class="ch-quote">
+      <p>"그분으로부터 온몸은 그 풍성한 공급을 해 주는 각 마디를 통하여, 그리고 각 지체가 분량에 따라 기능을 발휘하는 것을 통하여 함께 결합되고 함께 짜입니다."</p>
+      <span class="ref">에베소서 4장 16절 · Ephesians 4:16</span>
+    </div>
+    <p class="ch-body">감염병이 사람을 죽음으로 몰아넣었지만 항생제는 그 위협에서 해방을 주었습니다. 마찬가지로 죄는 우리를 영원한 죽음으로 끌고 가지만, <strong>예수 그리스도의 십자가는 우리에게 자유와 생명을 주셨습니다.</strong></p>
+    <div class="ch-quote">
+      <p>"그러므로 다른 이에게서는 구원을 받을 수 없습니다. 왜냐하면 우리가 의지하여 구원받을 수 있는 다른 이름을 하늘 아래 사람들 가운데 주신 적이 없기 때문입니다."</p>
+      <span class="ref">사도행전 4장 12절 · Acts 4:12</span>
+    </div>
+    <p class="ch-body">페니실린이 인류를 살린 약이었다면, <strong>예수 그리스도는 그의 이름을 부르고 믿는 모든 이에게 영원한 생명을 주시는 구원자</strong>인 것입니다.</p>
+    <button class="ch-btn" onclick="goChapter(5)">▼ 부산교회의 비전</button>
+  </div>
+</div>
+
+<div class="ch-panel" id="ch5">
+  <div class="ch-inner">
+    <span class="ch-tag">Chapter 05 · 2026 Vision · 부산교회</span>
+    <h2 class="ch-title">다음 세대를<br>향한<br>복음</h2>
+    <p class="ch-body">2026년 한국교회는 다음 세대인 35세 이하 젊은 청년 3천 명이 침례를 받기를 기도하고 있습니다.</p>
+    <p class="ch-body">이에 부산교회는 주님의 증거를 위하여 교회 안의 모든 연령층이 다음 세대(어린이들, 청소년들, 대학생들, 청년들)를 얻기 위해 일어나서 동역하길 원합니다.</p>
+    <div class="ch-quote">
+      <p>"그러므로 여러분은 가서, 모든 민족을 나의 제자로 삼아, 아버지와 아들과 성령의 이름 안으로 침례를 주고,"</p>
+      <span class="ref">마태복음 28장 19절 · Matthew 28:19</span>
+    </div>
+    <p class="ch-body">의의 예복을 입고 혼인 잔치에 참여하는 축복을 함께 누리길 원합니다. 주님의 시대적 사명에 따라 복음의 구조를 세우고 함께 나아가려고 합니다.</p>
+    <button class="ch-btn" onclick="goClosing()">▼ 마무리</button>
+  </div>
+</div>
+
+<div id="closing">
+  <div class="cl-wrap">
+    <div class="cl-top">페니실린이<br>인류를 살렸듯<br>복음이<br>영혼을 살립니다</div>
+    <p class="cl-body">과학과 섭리의 교차점에서 우리는 하나님의 손길을 발견합니다. 아무 보잘것없는 곰팡이 한 포자가 세상을 바꾸었듯, 복음의 작은 씨앗이 영원한 생명을 가져옵니다.</p>
+    <p class="cl-body"><strong>플레밍은 우연히 발견했지만, 하나님은 창세전부터 예비하셨습니다.</strong> 플로리, 체인, 히트리가 협력했듯, 우리는 함께 복음을 전하는 자로 서로 협력하야야 합니다.</p>
+    <div class="cl-verse">
+      <span class="cl-ref">사도행전 4장 12절 · Acts 4:12</span>
+      <p class="cl-vt">"우리가 의지하여 구원받을 수 있는 다른 이름을 하늘 아래 사람들 가운데 주신 적이 없기 때문입니다."</p>
+    </div>
+    <div class="cl-verse">
+      <span class="cl-ref">마태복음 28장 19절 · Matthew 28:19</span>
+      <p class="cl-vt">"그러므로 여러분은 가서, 모든 민족을 나의 제자로 삼아, 아버지와 아들과 성령의 이름 안으로 침례를 주고,"</p>
+    </div>
+    <div class="cl-church">
+      <div class="cl-church-name">✝ 부산교회</div>
+      <p>26년 상반기·하반기 복음 절기를 통해 복음의 구조를 세우고<br>매주 전체 복음 실행을 통해 다음 말씀이 우리의 삶이 되길 바랍니다.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  캔버스 세팅
+// ══════════════════════════════════════════════
+const pc  = document.getElementById('petri-canvas');
+const pctx = pc.getContext('2d');
+const oc  = document.getElementById('overlay-canvas');
+const octx = oc.getContext('2d');
+let W=0, H=0;
+
+// ══════════════════════════════════════════════
+//  세균 시스템 (변수를 먼저 선언하여 TDZ 에러 방지)
+// ══════════════════════════════════════════════
+const bacteria=[];
+const BCOUNT=200;
+
+function newBacterium(x,y){
+  return{
+    x: x??Math.random()*W,
+    y: y??Math.random()*H,
+    angle: Math.random()*Math.PI*2,
+    size: Math.random()*5+3,
+    speed: Math.random()*0.3+0.05,
+    alive: 1,          // 1=살아있음, 0=사멸
+    divTimer: Math.random()*300+100,  // 분열 타이머
+    wobble: Math.random()*Math.PI*2,
+    color: `hsl(${100+Math.random()*60},${40+Math.random()*30}%,${20+Math.random()*20}%)`,
+    type: Math.floor(Math.random()*3)  // 0=구균, 1=간균, 2=쌍구균
+  };
+}
+
+function initBacteria(){
+  bacteria.length=0;
+  for(let i=0;i<BCOUNT;i++){
+    bacteria.push(newBacterium());
+  }
+}
+
+function resize(){
+  W=pc.width=oc.width=innerWidth;
+  H=pc.height=oc.height=innerHeight;
+  initBacteria();
+}
+
+// ══════════════════════════════════════════════
+//  초기화 실행
+// ══════════════════════════════════════════════
+resize();
+window.addEventListener('resize', resize);
+
+// ══════════════════════════════════════════════
+//  마우스 — 곰팡이 포자 위치
+// ══════════════════════════════════════════════
+let mx=W/2, my=H/2, active=false;
+const cur=document.getElementById('cursor-elem')||document.getElementById('cursor');
+window.addEventListener('mousemove',e=>{
+  mx=e.clientX;my=e.clientY;
+  cur.style.left=mx+'px';cur.style.top=my+'px';
+});
+window.addEventListener('touchmove',e=>{
+  mx=e.touches[0].clientX;my=e.touches[0].clientY;
+},{passive:true});
+
+// ══════════════════════════════════════════════
+//  곰팡이 파동 시스템
+// ══════════════════════════════════════════════
+const fungalWaves=[];  // 퍼지는 사멸지대
+let fungalRadius=0;    // 현재 마우스 주변 사멸 반경
+
+// ══════════════════════════════════════════════
+//  배경 그리기 — 배지(培地) 질감
+// ══════════════════════════════════════════════
+function drawAgar(){
+  // 배지 색상 (琥珀色 → 녹색 배지)
+  const ag=pctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.min(W,H)*0.55);
+  ag.addColorStop(0,'#0d1a0e');
+  ag.addColorStop(0.5,'#091208');
+  ag.addColorStop(1,'#050a05');
+  pctx.fillStyle=ag;
+  pctx.fillRect(0,0,W,H);
+
+  // 배지 격자 패턴
+  pctx.strokeStyle='rgba(40,80,40,0.06)';
+  pctx.lineWidth=1;
+  for(let x=0;x<W;x+=30){
+    pctx.beginPath();pctx.moveTo(x,0);pctx.lineTo(x,H);pctx.stroke();
+  }
+  for(let y=0;y<H;y+=30){
+    pctx.beginPath();pctx.moveTo(0,y);pctx.lineTo(W,y);pctx.stroke();
+  }
+}
+
+// ══════════════════════════════════════════════
+//  세균 그리기
+// ══════════════════════════════════════════════
+function drawBacterium(b){
+  if(b.alive<=0) return;
+  pctx.save();
+  pctx.translate(b.x,b.y);
+  pctx.rotate(b.angle);
+  pctx.globalAlpha=b.alive*0.85;
+
+  const col=b.color;
+
+  if(b.type===0){
+    // 구균 (원형)
+    pctx.beginPath();
+    pctx.arc(0,0,b.size,0,Math.PI*2);
+    pctx.fillStyle=col;
+    pctx.fill();
+    // 하이라이트
+    pctx.beginPath();
+    pctx.arc(-b.size*0.25,-b.size*0.25,b.size*0.35,0,Math.PI*2);
+    pctx.fillStyle='rgba(255,255,255,0.12)';
+    pctx.fill();
+  } else if(b.type===1){
+    // 간균 (타원)
+    pctx.beginPath();
+    pctx.ellipse(0,0,b.size*1.8,b.size,0,0,Math.PI*2);
+    pctx.fillStyle=col;
+    pctx.fill();
+  } else {
+    // 쌍구균
+    pctx.beginPath();
+    pctx.arc(-b.size*0.6,0,b.size*0.85,0,Math.PI*2);
+    pctx.fillStyle=col;pctx.fill();
+    pctx.beginPath();
+    pctx.arc(b.size*0.6,0,b.size*0.85,0,Math.PI*2);
+    pctx.fillStyle=col;pctx.fill();
+  }
+
+  pctx.restore();
+}
+
+// ══════════════════════════════════════════════
+//  오버레이 — 사멸지대 + 곰팡이
+// ══════════════════════════════════════════════
+function drawOverlay(){
+  octx.clearRect(0,0,W,H);
+  if(!active) return;
+
+  // 현재 커서 주변 사멸지대 (투명 영역)
+  const killR=fungalRadius;
+  if(killR>10){
+    // 사멸지대 글로우
+    const kGrad=octx.createRadialGradient(mx,my,0,mx,my,killR);
+    kGrad.addColorStop(0,'rgba(180,240,160,0.03)');
+    kGrad.addColorStop(0.7,'rgba(100,200,120,0.02)');
+    kGrad.addColorStop(1,'rgba(80,160,80,0)');
+    octx.fillStyle=kGrad;
+    octx.beginPath();octx.arc(mx,my,killR,0,Math.PI*2);octx.fill();
+
+    // 사멸지대 경계선
+    octx.beginPath();
+    octx.arc(mx,my,killR,0,Math.PI*2);
+    octx.strokeStyle=`rgba(100,220,120,${0.3+Math.sin(T*3)*0.1})`;
+    octx.lineWidth=1.5;octx.setLineDash([4,6]);octx.stroke();octx.setLineDash([]);
+  }
+
+  // 곰팡이 시각화 (커서 위치)
+  drawFungus(octx,mx,my,killR);
+}
+
+function drawFungus(ctx,x,y,r){
+  const baseR=Math.max(8,r*0.08);
+  // 균사 가지들
+  const branches=8;
+  for(let i=0;i<branches;i++){
+    const angle=(i/branches)*Math.PI*2+T*0.3;
+    const len=baseR*2.5+Math.sin(T*2+i)*baseR*0.4;
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+    const ex=x+Math.cos(angle)*len;
+    const ey=y+Math.sin(angle)*len;
+    ctx.lineTo(ex,ey);
+    ctx.strokeStyle=`rgba(80,200,100,${0.4+Math.sin(T+i)*0.1})`;
+    ctx.lineWidth=1;ctx.stroke();
+    // 포자
+    ctx.beginPath();ctx.arc(ex,ey,2,0,Math.PI*2);
+    ctx.fillStyle='rgba(100,230,120,0.5)';ctx.fill();
+  }
+  // 중심
+  ctx.beginPath();ctx.arc(x,y,baseR,0,Math.PI*2);
+  const fg=ctx.createRadialGradient(x,y,0,x,y,baseR);
+  fg.addColorStop(0,'rgba(160,240,140,0.7)');
+  fg.addColorStop(1,'rgba(60,160,80,0.3)');
+  ctx.fillStyle=fg;ctx.fill();
+}
+
+// ══════════════════════════════════════════════
+//  메인 루프
+// ══════════════════════════════════════════════
+let T=0;
+function loop(){
+  pctx.clearRect(0,0,W,H);
+  drawAgar();
+
+  // 세균 업데이트 + 그리기
+  bacteria.forEach((b,i)=>{
+    if(!active){b.x+=Math.cos(b.angle)*b.speed; b.y+=Math.sin(b.angle)*b.speed;}
+    else{
+      // 사멸지대 체크
+      const dist=Math.hypot(b.x-mx,b.y-my);
+      if(dist<fungalRadius){
+        b.alive=Math.max(0,b.alive-0.03);
+      } else {
+        b.x+=Math.cos(b.angle+Math.sin(T+b.wobble)*0.5)*b.speed;
+        b.y+=Math.sin(b.angle+Math.sin(T+b.wobble)*0.5)*b.speed;
+        b.alive=Math.min(1,b.alive+0.01);
+      }
+      // 세균 분열
+      b.divTimer-=1;
+      if(b.divTimer<=0 && b.alive>0.8 && bacteria.length<300){
+        bacteria.push(newBacterium(b.x+Math.random()*10-5,b.y+Math.random()*10-5));
+        b.divTimer=200+Math.random()*200;
+      }
+    }
+    // 경계 처리
+    if(b.x<-20) b.x=W+20;
+    if(b.x>W+20) b.x=-20;
+    if(b.y<-20) b.y=H+20;
+    if(b.y>H+20) b.y=-20;
+
+    drawBacterium(b);
+  });
+
+  // 곰팡이 반경 성장
+  if(active) fungalRadius=Math.min(Math.min(W,H)*0.3, fungalRadius+0.8);
+
+  drawOverlay();
+  T+=0.016;
+  requestAnimationFrame(loop);
+}
+loop();
+
+// ══════════════════════════════════════════════
+//  스토리 시스템
+// ══════════════════════════════════════════════
+let currentCh=0;
+
+function startStory(){
+  document.getElementById('opening').style.opacity='0';
+  document.getElementById('opening').style.pointerEvents='none';
+  setTimeout(()=>document.getElementById('opening').style.display='none',800);
+  active=true;
+  fungalRadius=0;
+  goChapter(1);
+}
+
+function goChapter(n){
+  // 모든 패널 숨기기
+  document.querySelectorAll('.ch-panel').forEach(p=>p.classList.remove('show'));
+  currentCh=n;
+  const ch=document.getElementById('ch'+n);
+  if(ch) setTimeout(()=>ch.classList.add('show'),150);
+  document.getElementById('progress').style.width=(n/5*85)+'%';
+  document.getElementById('stage-label').textContent=
+    n===1?'1928 September · 세균 배양 접시':
+    n===2?'1929–1945 · 페니실린 개발':
+    n===3?'우연이 아닌 섭리':
+    n===4?'공동체와 구원':
+    '2026 · 부산교회의 비전';
+  // 곰팡이 초기화
+  fungalRadius=0;
+}
+
+function goClosing(){
+  document.querySelectorAll('.ch-panel').forEach(p=>p.classList.remove('show'));
+  setTimeout(()=>{
+    const cl=document.getElementById('closing');
+    cl.classList.add('show');
+    document.getElementById('progress').style.width='100%';
+  },200);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>멈추면 끝나는 기관</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;700&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-style:normal !important; }
+html { scroll-behavior: smooth; }
+
+:root {
+  --bg:    #020d18;
+  --cyan:  #00c8ff;
+  --text:  #ddeef8;
+  --dim:   rgba(221,238,248,0.52);
+  --gold:  #f0c540;
+  --dead:  #556677;
+  --serif: 'Noto Serif KR', serif;
+  --mono:  'IBM Plex Mono', monospace;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--serif);
+  font-weight: 400;
+  overflow-x: hidden;
+  padding-bottom: 100px;
+}
+
+::-webkit-scrollbar { width: 2px; }
+::-webkit-scrollbar-thumb { background: rgba(0,200,255,0.25); border-radius: 2px; }
+
+/* ── FIXED ECG BAR ─────────────────────────────────── */
+#ecg-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 88px;
+  z-index: 200;
+  background: linear-gradient(180deg, transparent 0%, rgba(2,13,24,0.97) 30%);
+  border-top: 1px solid rgba(0,200,255,0.12);
+}
+#ecg-canvas { width:100%; height:100%; display:block; }
+
+#monitor-info {
+  position: fixed;
+  bottom: 92px;
+  right: clamp(18px, 4vw, 44px);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: rgba(0,200,255,0.55);
+  text-align: right;
+  line-height: 1.8;
+  transition: color 0.6s ease;
+}
+
+/* ── HERO ──────────────────────────────────────────── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(44px,9vw,110px);
+  padding-bottom: clamp(80px,14vh,160px);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Pulsing ring behind hero */
+.hero-ring {
+  position: absolute;
+  top: 50%; left: clamp(44px,9vw,110px);
+  transform: translateY(-50%);
+  width: min(70vw, 520px);
+  height: min(70vw, 520px);
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(0,200,255,0.06) 0%,
+    rgba(0,130,200,0.03) 45%,
+    transparent 68%
+  );
+  animation: ringPulse 1.45s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes ringPulse {
+  0%,100% { transform:translateY(-50%) scale(1);   opacity:0.6; }
+  50%      { transform:translateY(-50%) scale(1.07); opacity:1;   }
+}
+
+.hero-eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.42em;
+  color: rgba(0,200,255,0.5);
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.hero-eyebrow::before {
+  content: '';
+  display: block;
+  width: 22px; height: 1px;
+  background: rgba(0,200,255,0.4);
+}
+
+h1.hero-title {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(38px, 6.2vw, 86px);
+  line-height: 1.22;
+  color: #e8f4fc;
+  max-width: 640px;
+  position: relative;
+}
+h1.hero-title span {
+  display: block;
+  font-size: clamp(13px, 1.7vw, 17px);
+  font-weight: 400;
+  color: rgba(0,200,255,0.55);
+  margin-top: 20px;
+  letter-spacing: 0.03em;
+}
+
+/* LIVE COUNTER */
+.counter-wrap {
+  margin-top: 56px;
+  position: relative;
+}
+.counter-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  color: rgba(0,200,255,0.45);
+  margin-bottom: 10px;
+}
+.counter-num {
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: clamp(36px, 5.5vw, 72px);
+  color: var(--cyan);
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 28px rgba(0,200,255,0.45), 0 0 60px rgba(0,200,255,0.15);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.counter-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: rgba(0,200,255,0.3);
+  letter-spacing: 0.2em;
+  margin-top: 8px;
+}
+
+/* Beat flash */
+.beat-flash {
+  position: absolute;
+  top: 50%; left: -20px;
+  transform: translateY(-50%);
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 12px var(--cyan);
+  animation: beatDot 1.45s ease-out infinite;
+}
+@keyframes beatDot {
+  0%   { opacity:1;  transform:translateY(-50%) scale(1); }
+  15%  { opacity:0.3; transform:translateY(-50%) scale(0.5); }
+  100% { opacity:1;  transform:translateY(-50%) scale(1); }
+}
+
+/* ── STAT SECTIONS ─────────────────────────────────── */
+.stat {
+  padding: clamp(50px,8vh,100px) clamp(44px,10vw,120px);
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.stat.in { opacity:1; transform:translateY(0); }
+
+.stat-eq {
+  font-family: var(--mono);
+  font-size: clamp(12px, 1.6vw, 15px);
+  color: rgba(0,200,255,0.42);
+  letter-spacing: 0.12em;
+  margin-bottom: 14px;
+}
+
+.stat-num {
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: clamp(60px, 11vw, 148px);
+  line-height: 0.9;
+  color: #ffffff;
+  text-shadow: 0 0 50px rgba(0,200,255,0.2);
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: baseline;
+  gap: 0.15em;
+}
+.stat-num sup {
+  font-size: 0.22em;
+  color: rgba(0,200,255,0.7);
+  letter-spacing: 0.1em;
+  vertical-align: super;
+  font-weight: 300;
+}
+
+.stat-desc {
+  font-size: clamp(14px, 1.7vw, 17px);
+  color: var(--dim);
+  max-width: 500px;
+  line-height: 1.95;
+  margin-top: 18px;
+  font-weight: 300;
+}
+
+/* ── PROSE ─────────────────────────────────────────── */
+.prose {
+  max-width: 620px;
+  padding: clamp(40px,6vh,80px) clamp(44px,10vw,120px);
+  opacity: 0;
+  transform: translateX(-24px);
+  transition: opacity 0.85s ease, transform 0.85s ease;
+}
+.prose.right { margin-left:auto; text-align:right; transform:translateX(24px); }
+.prose.center { margin:0 auto; text-align:center; transform:translateY(20px); }
+.prose.in { opacity:1; transform:translate(0); }
+
+.prose p {
+  font-size: clamp(15px, 1.85vw, 18px);
+  line-height: 2.05;
+  color: var(--text);
+  font-weight: 400;
+  margin-bottom: 1.25em;
+}
+.prose p:last-child { margin-bottom:0; }
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.32em;
+  color: rgba(0,200,255,0.5);
+  border: 1px solid rgba(0,200,255,0.18);
+  padding: 4px 12px;
+  border-radius: 2px;
+  margin-bottom: 20px;
+}
+.tag.gold {
+  color: rgba(240,197,64,0.55);
+  border-color: rgba(240,197,64,0.2);
+}
+.tag::before { content:'◉'; font-size:6px; animation: tagDot 2.2s ease-in-out infinite; }
+@keyframes tagDot { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+.dquote {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(17px, 2.4vw, 28px);
+  line-height: 1.55;
+  color: #c8e4f8;
+  margin: 18px 0 22px;
+}
+
+/* ── FLATLINE ZONE ─────────────────────────────────── */
+.zone-death {
+  padding: clamp(70px,10vh,140px) clamp(44px,10vw,120px);
+  opacity: 0;
+  transition: opacity 1s ease;
+  position: relative;
+}
+.zone-death.in { opacity:1; }
+.zone-death::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    rgba(0,5,14,0.6) 40%,
+    rgba(0,5,14,0.6) 60%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.death-headline {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(22px, 4vw, 52px);
+  line-height: 1.55;
+  color: rgba(180,210,240,0.9);
+  max-width: 640px;
+  position: relative;
+}
+.death-headline .stop {
+  color: #ff3344;
+  font-weight: 700;
+}
+
+/* Flatline divider */
+.flatline-rule {
+  margin: 48px 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(120,160,190,0.35) 25%,
+    rgba(160,190,210,0.7) 50%,
+    rgba(120,160,190,0.35) 75%,
+    transparent
+  );
+  position: relative;
+}
+.flatline-rule::after {
+  content: 'CARDIAC ARREST · 심정지';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  color: rgba(140,170,200,0.45);
+  background: var(--bg);
+  padding: 0 16px;
+  white-space: nowrap;
+}
+
+.death-prose {
+  max-width: 600px;
+  position: relative;
+}
+.death-prose p {
+  font-size: clamp(15px, 1.85vw, 18px);
+  line-height: 2.05;
+  color: rgba(200,225,245,0.82);
+  font-weight: 400;
+  margin-bottom: 1.2em;
+}
+.death-prose .dquote { color: rgba(170,200,225,0.9); }
+
+/* ── SPIRIT ZONE ───────────────────────────────────── */
+.spirit {
+  max-width: 640px;
+  padding: clamp(40px,6vh,80px) clamp(44px,10vw,120px);
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.85s ease, transform 0.85s ease;
+}
+.spirit.right { margin-left:auto; text-align:right; }
+.spirit.in { opacity:1; transform:translateY(0); }
+.spirit p {
+  font-size: clamp(15px, 1.85vw, 18px);
+  line-height: 2.1;
+  color: var(--text);
+  font-weight: 400;
+  margin-bottom: 1.2em;
+}
+.spirit p:last-child { margin-bottom:0; }
+
+/* ── JESUS REVEAL ──────────────────────────────────── */
+.jesus-wrap {
+  padding: clamp(70px,10vh,130px) clamp(44px,10vw,120px);
+  text-align: center;
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity 1.2s ease, transform 1.2s ease;
+}
+.jesus-wrap.in { opacity:1; transform:scale(1); }
+
+.jesus-name {
+  display: block;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(34px, 5.8vw, 78px);
+  letter-spacing: 0.14em;
+  color: var(--gold);
+  text-shadow: 0 0 70px rgba(240,197,64,0.75), 0 0 140px rgba(240,197,64,0.25);
+  line-height: 1.2;
+}
+.jesus-sub {
+  display: block;
+  margin-top: 16px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  color: rgba(240,197,64,0.45);
+}
+
+/* ── SCRIPTURE ─────────────────────────────────────── */
+.scripture {
+  margin: 10px clamp(44px,10vw,120px);
+  padding: clamp(28px,3.5vw,44px) clamp(28px,4vw,50px);
+  border-left: 2px solid;
+  opacity: 0;
+  transform: translateX(-18px);
+  transition: opacity 0.85s ease, transform 0.85s ease;
+  position: relative;
+  overflow: hidden;
+}
+.scripture::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 100px; height: 100px;
+  background: radial-gradient(circle, var(--glow-c, transparent) 0%, transparent 70%);
+}
+.scripture.in { opacity:1; transform:translateX(0); }
+
+.scripture.cyan {
+  border-color: var(--cyan);
+  background: linear-gradient(135deg, rgba(0,200,255,0.04), transparent 55%);
+  --glow-c: rgba(0,200,255,0.06);
+}
+.scripture.gold {
+  border-color: var(--gold);
+  background: linear-gradient(135deg, rgba(240,197,64,0.05), transparent 55%);
+  --glow-c: rgba(240,197,64,0.07);
+}
+
+.scr-ref {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.32em;
+  display: block;
+  margin-bottom: 16px;
+}
+.scripture.cyan .scr-ref { color: rgba(0,200,255,0.55); }
+.scripture.gold .scr-ref { color: rgba(240,197,64,0.55); }
+
+.scripture p {
+  font-size: clamp(16px, 2vw, 20px);
+  line-height: 1.95;
+  font-weight: 600;
+  color: #f0f8ff;
+}
+.scripture.gold p { color: #fffae8; }
+
+/* ── CLOSING ───────────────────────────────────────── */
+.closing {
+  min-height: 72vh;
+  display: flex;
+  align-items: center;
+  padding: clamp(60px,10vw,140px);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 1s ease 0.15s, transform 1s ease 0.15s;
+}
+.closing.in { opacity:1; transform:translateY(0); }
+.closing p {
+  font-size: clamp(17px, 2.2vw, 23px);
+  line-height: 2.2;
+  color: #e8f4f8;
+  font-weight: 400;
+  max-width: 620px;
+  margin-bottom: 1em;
+}
+
+.sp    { height:20px; }
+.sp-lg { height:60px; }
+</style>
+</head>
+<body>
+
+<!-- ── FIXED ECG MONITOR ── -->
+<div id="ecg-bar"><canvas id="ecg-canvas"></canvas></div>
+<div id="monitor-info">
+  <div id="bpm-disp">70 BPM</div>
+  <div id="spo2-disp">SpO₂ 98%</div>
+</div>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-ring"></div>
+  <div class="hero-eyebrow">CARDIAC MONITOR · 심장 모니터</div>
+  <h1 class="hero-title">
+    멈추면 끝나는<br>기관
+    <span>— 심장과 산소, 그리고 생명의 이야기</span>
+  </h1>
+  <div class="counter-wrap">
+    <div class="beat-flash"></div>
+    <div class="counter-label">이 페이지를 연 이후 심장이 뛴 횟수</div>
+    <div class="counter-num" id="beatCount">0</div>
+    <div class="counter-sub">HEARTBEATS SINCE YOU OPENED THIS PAGE</div>
+  </div>
+</section>
+
+<!-- ── 심장 소개 ── -->
+<div class="prose" id="p1">
+  <p>우리 몸에는 한 번도 쉬지 않는 기관이 있습니다.</p>
+  <p>바로 심장입니다.</p>
+</div>
+
+<!-- ── STAT: 하루 ── -->
+<div class="stat" id="st1">
+  <div class="stat-eq">70회 × 60분 × 24시간 =</div>
+  <div class="stat-num">100,800<sup>번</sup></div>
+  <p class="stat-desc">
+    성인의 평균 심박수는 보통 분당 약 60~100회입니다.
+    안정된 상태에서는 대략 분당 70회 정도로 계산할 수 있습니다.<br><br>
+    그렇다면 하루 동안 심장은 얼마나 많이 뛸까요? 그 결과는 약 100,800번입니다.
+    즉, 우리의 심장은 하루에 약 10만 번이나 뛰고 있습니다.
+  </p>
+</div>
+
+<!-- ── STAT: 1년 ── -->
+<div class="stat" id="st2" style="padding-top:0;">
+  <div class="stat-eq">1년 동안</div>
+  <div class="stat-num">3,600<sup>만 번</sup></div>
+  <p class="stat-desc">조금 더 넓게 생각해 보면 놀랍습니다. 1년 동안 심장은 약 3,600만 번을 뜁니다.</p>
+</div>
+
+<!-- ── STAT: 평생 ── -->
+<div class="stat" id="st3" style="padding-top:0;">
+  <div class="stat-eq">80세까지 산다면</div>
+  <div class="stat-num">30<sup>억 번 이상</sup></div>
+  <p class="stat-desc">80세까지 산다고 가정하면 평생 동안 30억 번 이상을 뛰게 됩니다.</p>
+</div>
+
+<!-- ── 자동차 비유 ── -->
+<div class="prose" id="p2">
+  <div class="tag">ANALOGY · 비유</div>
+  <p>한 번 생각해 보십시오.</p>
+  <p>자동차를 한 대 샀다고 가정해 봅시다. 시동을 걸면 엔진이 80년 동안 단 한 번도 꺼지지 않고 계속 돌아간다. 이것은 사실상 불가능한 이야기입니다.</p>
+  <p>하지만 우리 몸 안에 있는 심장은 그보다 훨씬 더 놀라운 일을 합니다. 심장은 우리가 잠을 잘 때도 일을 할 때도 걷고 있을 때도 단 한 번도 쉬지 않고 평생 동안 30억 번 이상을 펌프질합니다. 그리고 그 펌프질을 통해 피를 온몸으로 보내 줍니다.</p>
+</div>
+
+<!-- ── 산소 ── -->
+<div class="prose right" id="p3">
+  <div class="tag" style="margin-left:auto;">OXYGEN · 산소</div>
+  <p>그 피 속에는 우리 몸이 살아가기 위해 반드시 필요한 것이 들어 있습니다.</p>
+  <div class="dquote">바로 산소입니다.</div>
+  <p>우리 몸의 세포는 산소 없이는 살아갈 수 없습니다. 뇌도 심장도 근육도 모든 세포가 산소를 필요로 합니다. 그래서 심장은 끊임없이 피를 보내 산소를 몸 전체로 전달합니다.</p>
+</div>
+
+<!-- ── FLATLINE ZONE ── -->
+<div class="zone-death" id="zDeath">
+  <div class="death-headline">
+    그런데 만약<br>
+    그 심장이 <span class="stop">멈춘다면</span><br>
+    어떻게 될까요?
+  </div>
+  <div class="flatline-rule"></div>
+  <div class="death-prose">
+    <p>피의 흐름이 멈춥니다.</p>
+    <p>피가 멈추면 산소가 전달되지 않습니다.</p>
+    <p>산소가 끊어지면 우리 몸의 세포는 죽기 시작합니다.</p>
+    <p>특히 뇌는 산소에 매우 민감합니다. 뇌는 단 4~5분만 산소가 끊겨도 돌이킬 수 없는 손상이 시작됩니다.</p>
+    <p>그래서 의사들은 말합니다.</p>
+    <div class="dquote">"심장이 멈추는 것은<br>몸 전체의 생명이 멈추는 것이다."</div>
+    <p>평생 동안 30억 번을 쉬지 않고 뛰던 심장이라도 단 1분만 멈추면 사람의 생명은 심각한 위기에 빠집니다.</p>
+  </div>
+</div>
+
+<!-- ── SPIRITUAL PARALLEL ── -->
+<div class="sp-lg"></div>
+
+<div class="spirit" id="sp1">
+  <div class="tag gold">SPIRITUAL PARALLEL</div>
+  <p>이 모습을 가만히 생각해 보면 우리의 영적인 상태와도 매우 닮아 있습니다.</p>
+  <p>사람은 겉으로 보면 모두 살아 있는 것처럼 보입니다. 말도 하고 일도 하고 웃기도 합니다.</p>
+  <p>그러나 성경은 놀라운 말씀을 합니다.</p>
+</div>
+
+<!-- SCRIPTURE: 에베소서 2:1 -->
+<div class="scripture cyan" id="scr1">
+  <span class="scr-ref">에베소서 2장 1절</span>
+  <p>"그런데 여러분은 허물과 죄들 가운데서 죽어 있었습니다."</p>
+</div>
+
+<div class="spirit" id="sp2">
+  <p>성경은 말합니다. 사람은 겉으로는 살아 있지만 하나님과의 관계가 끊어지면 영적으로는 죽은 상태라고 말합니다.</p>
+  <p>마치 심장이 멈추어 몸 전체로 산소가 전달되지 않는 것처럼 죄는 하나님과 우리 사이의 생명의 흐름을 막아 버립니다.</p>
+</div>
+
+<div class="spirit right" id="sp3">
+  <p>그래서 사람은 돈이 있어도 명예가 있어도 성공을 해도 마음 깊은 곳에서는 참된 생명을 누리지 못합니다.</p>
+  <p>겉으로는 살아 있지만 영혼 깊은 곳에서는 생명의 흐름이 막혀 있기 때문입니다.</p>
+  <p>그래서 하나님은 우리에게 생명을 다시 주시기 위해 우리에게 한 분을 보내셨습니다.</p>
+</div>
+
+<!-- ── JESUS REVEAL ── -->
+<div class="jesus-wrap" id="jReveal">
+  <span class="jesus-name">예수 그리스도</span>
+  <span class="jesus-sub">JESUS CHRIST · 생명의 흐름을 회복하시는 분</span>
+</div>
+
+<div class="spirit" id="sp4">
+  <p>예수님은 이렇게 말씀하셨습니다.</p>
+</div>
+
+<!-- SCRIPTURE: 요한복음 11:25 -->
+<div class="scripture gold" id="scr2">
+  <span class="scr-ref">요한복음 11장 25절</span>
+  <p>“나는 부활이요 생명이니, 나를 믿는 사람은 죽어도 살 것이고,"</p>
+</div>
+
+<div class="spirit" id="sp5">
+  <p>심장이 다시 뛰면 몸 전체로 피가 흐르기 시작하듯 예수 그리스도가 우리 삶에 들어오면 막혀 있던 영혼의 길이 열리고 하나님의 생명이 다시 흐르기 시작합니다.</p>
+  <p>그래서 예수님은 또 이렇게 말씀하셨습니다.</p>
+</div>
+
+<!-- SCRIPTURE: 요한복음 10:10 -->
+<div class="scripture gold" id="scr3">
+  <span class="scr-ref">요한복음 10장 10절</span>
+  <p>"내가 온 것은 양들이 생명을 얻고 더 풍성히 얻도록 하기 위한 것입니다."</p>
+</div>
+
+<div class="spirit right" id="sp6">
+  <p>심장이 뛰지 않으면 몸은 살아갈 수 없습니다. 마찬가지로 예수 그리스도가 없는 삶은 참된 생명을 누릴 수 없습니다.</p>
+  <p>그래서 성경은 이렇게 말합니다.</p>
+</div>
+
+<!-- SCRIPTURE: 요한일서 5:12 -->
+<div class="scripture gold" id="scr4">
+  <span class="scr-ref">요한일서 5장 12절</span>
+  <p>"하나님의 아들이 있는 사람에게는 생명이 있고, 하나님의 아들이 없는 사람에게는 생명이 없습니다."</p>
+</div>
+
+<!-- ── CLOSING ── -->
+<div class="closing" id="closing">
+  <div>
+    <p>우리 몸에 심장이 필요하듯 우리 영혼에는 예수 그리스도가 필요합니다.</p>
+    <p>그리고 그분이 우리 안에 들어오실 때 비로소 막혀 있던 생명의 흐름이 다시 시작됩니다.</p>
+  </div>
+</div>
+
+<script>
+/* ─── BEAT COUNTER ──────────────────────────────── */
+const t0   = Date.now();
+const BPM  = 70;
+const msPerBeat = (60 / BPM) * 1000;
+
+function tickCounter() {
+  const beats = Math.floor((Date.now() - t0) / msPerBeat);
+  const el = document.getElementById('beatCount');
+  if (el) el.textContent = beats.toLocaleString('ko-KR');
+}
+setInterval(tickCounter, 80);
+
+/* ─── ECG CANVAS ────────────────────────────────── */
+const bar    = document.getElementById('ecg-bar');
+const canvas = document.getElementById('ecg-canvas');
+const cx     = canvas.getContext('2d');
+let cW = 0, cH = 0;
+
+function resizeCv() {
+  cW = canvas.width  = bar.clientWidth;
+  cH = canvas.height = bar.clientHeight;
+}
+resizeCv();
+window.addEventListener('resize', resizeCv);
+
+// ECG waveform shape (normalized 0→1 cycle, amplitude -1 to +1)
+function ecgShape(p) {
+  p = ((p % 1) + 1) % 1;
+  if (p < 0.08)  return Math.sin((p / 0.08) * Math.PI) * 0.13;
+  if (p < 0.30)  return 0;
+  if (p < 0.33)  return -((p - 0.30) / 0.03) * 0.13;
+  if (p < 0.375) return -0.13 + ((p - 0.33) / 0.045) * 1.13;
+  if (p < 0.405) return 1.0  - ((p - 0.375) / 0.03)  * 1.28;
+  if (p < 0.44)  return -0.28 + ((p - 0.405) / 0.035) * 0.28;
+  if (p < 0.54)  return 0;
+  if (p < 0.74)  return Math.sin(((p - 0.54) / 0.20) * Math.PI) * 0.30;
+  return 0;
+}
+
+const CYCLE_PX = 170;   // pixels per heartbeat at baseline speed
+let ecgT       = 0;     // running time in pixels
+let lastStamp  = null;
+let scrollPct  = 0;
+
+window.addEventListener('scroll', () => {
+  scrollPct = window.scrollY / Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+}, { passive: true });
+
+// flatline ramps: 0 = full ECG, 1 = flat line
+let flatAlpha = 0;
+
+function drawECG(ts) {
+  requestAnimationFrame(drawECG);
+  if (!lastStamp) { lastStamp = ts; }
+  const dt = Math.min(ts - lastStamp, 40);
+  lastStamp = ts;
+
+  if (!cW) { resizeCv(); return; }
+
+  // Death zone: roughly 38%–68% scroll
+  const inDeath = scrollPct > 0.38 && scrollPct < 0.66;
+  flatAlpha = inDeath
+    ? Math.min(1, flatAlpha + dt * 0.0025)
+    : Math.max(0, flatAlpha - dt * 0.002);
+
+  // Advance ECG (slows as it flatlines)
+  const speed = 0.085 * (1 - flatAlpha * 0.98); // px/ms
+  ecgT += dt * speed;
+
+  cx.clearRect(0, 0, cW, cH);
+
+  // Color theme
+  const isGold = scrollPct > 0.66;
+  const goldPct = isGold ? Math.min(1, (scrollPct - 0.66) / 0.14) : 0;
+  const cyanR = 0,   cyanG = 200, cyanB = 255;
+  const goldR = 240, goldG = 197, goldB = 64;
+  const R = Math.round(cyanR + (goldR - cyanR) * goldPct);
+  const G = Math.round(cyanG + (goldG - cyanG) * goldPct);
+  const B = Math.round(cyanB + (goldB - cyanB) * goldPct);
+  const liveAlpha = 0.88 - flatAlpha * 0.62;
+
+  const midY = cH * 0.52;
+  const amp  = cH * 0.40;
+
+  // Draw ECG trace
+  cx.beginPath();
+  for (let x = 0; x <= cW; x++) {
+    const t  = (ecgT - (cW - x)) / CYCLE_PX;
+    const yN = ecgShape(t) * (1 - flatAlpha);
+    const y  = midY - yN * amp;
+    x === 0 ? cx.moveTo(x, y) : cx.lineTo(x, y);
+  }
+
+  // Fading trail gradient
+  const grad = cx.createLinearGradient(0, 0, cW, 0);
+  grad.addColorStop(0,    `rgba(${R},${G},${B},0)`);
+  grad.addColorStop(0.35, `rgba(${R},${G},${B},${(liveAlpha * 0.18).toFixed(3)})`);
+  grad.addColorStop(0.72, `rgba(${R},${G},${B},${(liveAlpha * 0.55).toFixed(3)})`);
+  grad.addColorStop(1,    `rgba(${R},${G},${B},${liveAlpha.toFixed(3)})`);
+  cx.strokeStyle = grad;
+  cx.lineWidth   = 1.8;
+  cx.lineJoin    = 'round';
+  cx.stroke();
+
+  // Flatline: faint grey baseline
+  if (flatAlpha > 0.02) {
+    cx.beginPath();
+    cx.moveTo(0, midY);
+    cx.lineTo(cW, midY);
+    cx.strokeStyle = `rgba(100,140,170,${flatAlpha * 0.5})`;
+    cx.lineWidth = 1;
+    cx.stroke();
+  }
+
+  // Glowing cursor dot at leading edge
+  if (flatAlpha < 0.95) {
+    const headT = ecgT / CYCLE_PX;
+    const headY = midY - ecgShape(headT) * amp * (1 - flatAlpha);
+    cx.save();
+    cx.globalCompositeOperation = 'lighter';
+    const gr = cx.createRadialGradient(cW, headY, 0, cW, headY, 18);
+    gr.addColorStop(0, `rgba(${R},${G},${B},${(0.5 - flatAlpha * 0.4).toFixed(3)})`);
+    gr.addColorStop(1, 'transparent');
+    cx.fillStyle = gr;
+    cx.beginPath();
+    cx.arc(cW, headY, 18, 0, Math.PI * 2);
+    cx.fill();
+    cx.restore();
+  }
+
+  // Update monitor readout
+  const bpmEl  = document.getElementById('bpm-disp');
+  const spo2El = document.getElementById('spo2-disp');
+  const info   = document.getElementById('monitor-info');
+  if (bpmEl && spo2El && info) {
+    if (flatAlpha > 0.6) {
+      bpmEl.textContent  = '--- BPM';
+      spo2El.textContent = 'SpO₂ ---%';
+      info.style.color   = 'rgba(100,140,170,0.5)';
+    } else if (isGold) {
+      bpmEl.textContent  = '70 BPM';
+      spo2El.textContent = 'SpO₂ 98%';
+      info.style.color   = `rgba(240,197,64,${0.45 + goldPct * 0.3})`;
+    } else {
+      bpmEl.textContent  = '70 BPM';
+      spo2El.textContent = 'SpO₂ 98%';
+      info.style.color   = 'rgba(0,200,255,0.55)';
+    }
+  }
+}
+requestAnimationFrame(drawECG);
+
+/* ─── INTERSECTION OBSERVER ─────────────────────── */
+document.querySelectorAll(
+  '.prose,.stat,.spirit,.scripture,.jesus-wrap,.zone-death,.closing'
+).forEach(el => {
+  new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); }),
+    { threshold: 0.07, rootMargin: '0px 0px -45px 0px' }
+  ).observe(el);
+});
+</script>
+</body>
+</html>
