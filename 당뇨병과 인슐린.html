@@ -357,6 +357,61 @@ body {
 /* ── SPACERS ── */
 .sp { height: 20px; }
 .sp-lg { height: 60px; }
+
+/* ── FINAL INVITATION ── */
+.final-quote {
+  text-align: center;
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: clamp(19px, 3vw, 32px);
+  line-height: 1.65;
+  color: var(--gold);
+  text-shadow: 0 0 50px rgba(245,200,66,0.5);
+}
+
+/* ── CHURCH FOOTER ── */
+.church-footer {
+  text-align: center;
+  padding: clamp(60px,10vw,120px) clamp(24px,10vw,60px) clamp(90px,14vw,160px);
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 1s ease 0.15s, transform 1s ease 0.15s;
+  position: relative;
+}
+.church-footer.in { opacity:1; transform:translateY(0); }
+.church-footer::before {
+  content: '';
+  display: block;
+  width: 1px;
+  height: 60px;
+  margin: 0 auto clamp(30px,5vw,50px);
+  background: linear-gradient(180deg, transparent, rgba(245,200,66,0.5));
+}
+.church-name {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: clamp(20px, 2.4vw, 26px);
+  color: #fff8e0;
+  letter-spacing: 0.04em;
+}
+.church-tel {
+  margin-top: 10px;
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 600;
+  font-size: clamp(17px, 2vw, 20px);
+  color: var(--gold);
+  letter-spacing: 0.02em;
+}
+.church-note {
+  margin-top: 30px;
+  font-size: clamp(13px, 1.5vw, 15px);
+  font-weight: 400;
+  color: var(--textdim);
+  line-height: 1.95;
+  max-width: 26em;
+  margin-left: auto;
+  margin-right: auto;
+}
 </style>
 </head>
 <body>
@@ -552,6 +607,31 @@ body {
   </div>
 </div>
 
+<!-- ── FINAL INVITATION ── -->
+<div class="sp-lg"></div>
+
+<div class="prose center" id="finalInvite">
+  <div class="f-label spirit" style="margin:0 auto 24px;">INVITATION</div>
+  <p class="final-quote">지금 이 순간,<br>하나님께 나아가십시오</p>
+</div>
+
+<div class="scripture amber" id="scrFinal">
+  <span class="scripture-ref">사도행전 16장 31절</span>
+  <p>"주 예수님을 믿으십시오. 그러면 그대와 그대의 집안 식구가 구원을 받을 것입니다."</p>
+</div>
+
+<div class="prose center" id="finalMsg">
+  <p>예수 그리스도를 받아들이는 순간, 끊어졌던 관계는 다시 이어지고, 무너졌던 삶은 새로운 시작을 맞이하게 됩니다.</p>
+  <p style="color:var(--gold); font-weight:600;">조용히 무너지는 길이 아니라, 참된 생명으로 나아가는 길.<br>그 길이 지금, 당신 앞에 놓여 있습니다.</p>
+</div>
+
+<!-- ── CHURCH CONTACT ── -->
+<footer class="church-footer" id="churchFooter">
+  <div class="church-name">부산교회</div>
+  <div class="church-tel">010-9362-7642</div>
+  <p class="church-note">언제든 마음이 열리는 순간, 저희에게 연락 주십시오.<br>함께 그 길을 걸어가겠습니다.</p>
+</footer>
+
 </div><!-- .wrap -->
 
 <script>
@@ -735,7 +815,7 @@ window.addEventListener('scroll', () => {
 
 /* ─── INTERSECTION OBSERVER ───────────────────────────────── */
 const targets = document.querySelectorAll(
-  '.prose, .word-reveal, .vial-section, .scripture, .closing'
+  '.prose, .word-reveal, .vial-section, .scripture, .closing, .church-footer'
 );
 
 const io = new IntersectionObserver((entries) => {
